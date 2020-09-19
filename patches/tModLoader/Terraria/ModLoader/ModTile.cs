@@ -2,7 +2,10 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Collections.Generic;
+using Terraria.GameContent;
+using Terraria.ID;
 using Terraria.Localization;
+using Terraria.ObjectData;
 
 namespace Terraria.ModLoader
 {
@@ -49,14 +52,6 @@ namespace Terraria.ModLoader
 		/// </summary>
 		public int minPick = 0;
 		/// <summary>
-		/// Whether or not the smart cursor function is disabled when the cursor hovers above this tile. Defaults to false.
-		/// </summary>
-		public bool disableSmartCursor = false;
-		/// <summary>
-		/// Whether or not the smart tile interaction function is disabled when the cursor hovers above this tile. Defaults to false.
-		/// </summary>
-		public bool disableSmartInteract = false;
-		/// <summary>
 		/// An array of the IDs of tiles that this tile can be considered as when looking for crafting stations.
 		/// </summary>
 		public int[] adjTiles = new int[0];
@@ -69,38 +64,17 @@ namespace Terraria.ModLoader
 		/// </summary>
 		public int openDoorID = -1;
 		/// <summary>
-		/// The default name of this chest that is displayed when this 2x2 chest is open. Defaults to the empty string, which means that this tile isn't a chest. Setting this field will make the tile behave like a chest (meteors will avoid it, tiles underneath cannot be mined, etc.), but you will have to manually give it storage capabilities yourself. (See the ExampleMod for something you can copy/paste.)
-		/// </summary>
-		public string chest = "";
-		/// <summary>
 		/// The ID of the item that drops when this chest is destroyed. Defaults to 0. Honestly, this is only really used when the chest limit is reached on a server.
 		/// </summary>
 		public int chestDrop = 0;
 		/// <summary>
-		/// Same as chest, except use this if your block is a dresser (has a size of 3x2 instead of 2x2).
-		/// </summary>
-		public string dresser = "";
-		/// <summary>
 		/// The ID of the item that drops when this dresser is destroyed. Defaults to 0. Honestly, this is only really used when the chest limit is reached on a server.
 		/// </summary>
 		public int dresserDrop = 0;
-		/// <summary>
-		/// Whether or not this tile is a valid spawn point. Defaults to false. If you set this to true, you will still have to manually set the spawn yourself in the RightClick hook.
-		/// </summary>
-		public bool bed = false;
-		/// <summary>
-		/// Whether or not this tile behaves like a torch. If you are making a torch tile, then setting this to true is necessary in order for tile placement, tile framing, and the item's smart selection to work properly.
-		/// </summary>
-		public bool torch = false;
-		/// <summary>
-		/// Whether or not this tile is a sapling, which can grow into a modded tree or palm tree.
-		/// </summary>
-		public bool sapling = false;
-		/// <summary>
-		/// Whether or not this tile is a clock.
-		/// </summary>
-		public bool clock = false;
-		
+
+		/// <summary> The translations for the name that is displayed when this tile is opened as a chest or dresser. This won't be used if you don't add your tile to <see cref="TileID.Sets.BasicChest"/> or <see cref="TileID.Sets.BasicDresser"/>. </summary>
+		public ModTranslation ContainerName { get; internal set; }
+
 		public bool IsDoor => openDoorID != -1 || closeDoorID != -1;
 		
 		/// <summary>
@@ -200,18 +174,42 @@ namespace Terraria.ModLoader
 		}
 
 		protected sealed override void Register() {
-			if (Mod.tiles.ContainsKey(Name))
-				throw new Exception("You tried to add 2 ModTile with the same name: " + Name + ". Maybe 2 classes share a classname but in different namespaces while autoloading or you manually called AddTile with 2 tiles of the same name.");
+			ContainerName = Mod.GetOrCreateTranslation($"Mods.{Mod.Name}.Containers.{Name}", true);
+
+			ModTypeLookup<ModTile>.Register(this);
 
 			Type = (ushort)TileLoader.ReserveTileID();
 
-			Mod.tiles[Name] = this;
 			TileLoader.tiles.Add(this);
-			ContentInstance.Register(this);
+		}
+
+		public override void SetupContent() {
+			TextureAssets.Tile[Type] = ModContent.GetTexture(Texture);
+
+			SetDefaults();
+
+			//in Terraria.ObjectData.TileObject data make the following public:
+			//  newTile, newSubTile, newAlternate, addTile, addSubTile, addAlternate
+			if (TileObjectData.newTile.Width > 1 || TileObjectData.newTile.Height > 1) {
+				TileObjectData.FixNewTile();
+				throw new Exception("It appears that you have an error surrounding TileObjectData.AddTile in " + GetType().FullName) { HelpLink = "https://github.com/tModLoader/tModLoader/wiki/Basic-tModLoader-Modding-FAQ#tileobjectdataaddtile-issues" };
+			}
+			if (Main.tileLavaDeath[Type])
+				Main.tileObsidianKill[Type] = true;
+
+			if (Main.tileSolid[Type])
+				Main.tileNoSunLight[Type] = true;
+
+			PostSetDefaults();
+
+			if (TileID.Sets.HasOutlines[Type])
+				TextureAssets.HighlightMask[Type] = ModContent.GetTexture(HighlightTexture);
+
+			TileID.Search.Add(FullName, Type);
 		}
 
 		/// <summary>
-		/// Allows you to set the properties of this tile. Many properties are stored as arrays throughout Terraria's code.
+		/// Allows you to set the properties of ttile.his titile.le. Many properties are stored as arrays throughout Terraria's code.
 		/// </summary>
 		public virtual void SetDefaults() {
 		}

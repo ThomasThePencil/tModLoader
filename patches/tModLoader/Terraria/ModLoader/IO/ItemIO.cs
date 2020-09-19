@@ -64,22 +64,18 @@ namespace Terraria.ModLoader.IO
 				item.netDefaults(tag.GetInt("id"));
 			}
 			else {
-				int type = ModLoader.GetMod(modName)?.ItemType(tag.GetString("name")) ?? 0;
-				if (type > 0) {
-					item.netDefaults(type);
-
+				if (ModContent.TryFind(modName, tag.GetString("name"), out ModItem modItem)) {
+					item.SetDefaults(modItem.Type);
 					item.modItem.Load(tag.GetCompound("data"));
 				}
 				else {
-					item.netDefaults(ModContent.ItemType<UnloadedItem>());
+					item.SetDefaults(ModContent.ItemType<UnloadedItem>());
 					((UnloadedItem)item.modItem).Setup(tag);
 				}
 			}
 
 			if (tag.ContainsKey("modPrefixMod") && tag.ContainsKey("modPrefixName")) {
-				string prefixMod = tag.GetString("modPrefixMod");
-				string prefixName = tag.GetString("modPrefixName");
-				item.Prefix(ModLoader.GetMod(prefixMod)?.PrefixType(prefixName) ?? 0);
+				item.Prefix(ModContent.TryFind(tag.GetString("modPrefixMod"), tag.GetString("modPrefixName"), out ModPrefix prefix) ? prefix.Type : 0);
 			}
 			else if (tag.ContainsKey("prefix")) {
 				item.Prefix(tag.GetByte("prefix"));
@@ -118,16 +114,13 @@ namespace Terraria.ModLoader.IO
 
 		internal static void LoadGlobals(Item item, IList<TagCompound> list) {
 			foreach (var tag in list) {
-				var mod = ModLoader.GetMod(tag.GetString("mod"));
-				var globalItem = mod?.GetGlobalItem(tag.GetString("name"));
-				if (globalItem != null) {
+				if (ModContent.TryFind(tag.GetString("mod"), tag.GetString("name"), out GlobalItem globalItem)) {
 					var globalItemInstance = globalItem.Instance(item);
 					try {
 						globalItemInstance.Load(item, tag.GetCompound("data"));
 					}
 					catch (Exception e) {
-						throw new CustomModDataException(mod,
-							"Error in reading custom player data for " + mod.Name, e);
+						throw new CustomModDataException(globalItem.Mod, $"Error in reading custom player data for {globalItem.FullName}", e);
 					}
 				}
 				else {
@@ -168,7 +161,7 @@ namespace Terraria.ModLoader.IO
 		public static void ReceiveModData(Item item, BinaryReader reader) {
 			if (item.IsAir) return;
 			try {
-				reader.SafeRead(r => item.modItem?.NetRecieve(r));
+				reader.SafeRead(r => item.modItem?.NetReceive(r));
 			}
 			catch (IOException) {
 				Logging.tML.Error($"Above IOException error caused by {item.modItem.Name} from the {item.modItem.Mod.Name} mod.");
