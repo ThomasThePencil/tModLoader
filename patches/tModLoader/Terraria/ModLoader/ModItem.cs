@@ -79,21 +79,19 @@ namespace Terraria.ModLoader
 		}
 
 		/// <summary>
-		/// Whether instances of this ModItem are created through Clone or constructor (by default implementations of NewInstance and Clone(Item, Item)). 
+		/// Whether instances of this ModItem are created through Clone or constructor. 
 		/// Defaults to false (using default constructor).
 		/// </summary>
-		public virtual bool CloneNewInstances => true;
+		public virtual bool CloneNewInstances => false;
+
+		// Should we keep both of these methods?
 
 		/// <summary>
 		/// Returns a clone of this ModItem. 
 		/// Allows you to decide which fields of your ModItem class are copied over when an item stack is split or something similar happens. 
 		/// By default this will return a memberwise clone; you will want to override this if your ModItem contains object references. 
-		/// Only called if CloneNewInstances is set to true.
 		/// Since several ModItem class fields are also set by the default implementation of this method, you'll most likely want to call base.Clone() as the first statement of your override.
 		/// </summary>
-		/// <example><code>var clone = (ExampleHookItem)base.Clone();
-		/// clone.targets = (int[])this.targets.Clone(); // Or whatever deep copy operations are relevant.
-		/// return clone;</code></example>
 		public virtual ModItem Clone() => (ModItem)MemberwiseClone();
 
 		/// <summary>
@@ -114,7 +112,7 @@ namespace Terraria.ModLoader
 		/// If CloneNewInstances is true, just calls Clone()
 		/// Otherwise calls the default constructor and copies fields
 		/// </summary>
-		public virtual ModItem NewInstance(Item itemClone) {
+		public ModItem NewInstance(Item itemClone) {
 			if (CloneNewInstances) {
 				return Clone(itemClone);
 			}

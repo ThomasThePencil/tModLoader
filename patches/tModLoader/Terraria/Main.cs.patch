@@ -2438,13 +2438,15 @@
  
  			new Microsoft.Xna.Framework.Color(150, 150, 150, 150);
  			if (mouseX >= num && (float)mouseX <= (float)num + (float)TextureAssets.InventoryBack.Width() * inventoryScale && mouseY >= num2 && (float)mouseY <= (float)num2 + (float)TextureAssets.InventoryBack.Height() * inventoryScale && !PlayerInput.IgnoreMouseInterface) {
-@@ -31238,7 +_,8 @@
+@@ -31238,7 +_,10 @@
  
  		public static void CraftItem(Recipe r) {
  			int stack = mouseItem.stack;
 -			mouseItem = r.createItem.Clone();
++			int origType = r.createItem.type;
++			int origStack = r.createItem.stack;
 +			mouseItem = r.createItem;
-+			r.createItem = new Item(r.createItem.type) { stack = r.createItem.stack };
++			r.createItem = new Item(origType) { stack = origStack };
  			mouseItem.stack += stack;
  			if (stack <= 0)
  				mouseItem.Prefix(-1);
