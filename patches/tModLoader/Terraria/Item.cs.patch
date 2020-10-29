@@ -31,7 +31,7 @@
  		public bool isAShopItem;
  		public short hairDye = -1;
  		public byte paint;
-@@ -147,10 +_,22 @@
+@@ -147,10 +_,58 @@
  		public int netID;
  		public int crit;
  		public byte prefix;
@@ -40,20 +40,56 @@
 -		public bool ranged;
 -		public bool summon;
 +		internal bool melee {
-+			get => DamageTypes[DamageClass.Melee];
-+			set => DamageTypes[DamageClass.Melee] = value;
++			get {
++				if (DamageTypes.ContainsKey(DamageClass.Melee))
++					return DamageTypes[DamageClass.Melee];
++
++				return false;
++			}
++
++			set {
++				if (DamageTypes.ContainsKey(DamageClass.Melee))
++					DamageTypes[DamageClass.Melee] = value;
++			}
 +		}
 +		internal bool magic {
-+			get => DamageTypes[DamageClass.Magic];
-+			set => DamageTypes[DamageClass.Magic] = value;
++			get {
++				if (DamageTypes.ContainsKey(DamageClass.Magic))
++					return DamageTypes[DamageClass.Magic];
++
++				return false;
++			}
++
++			set {
++				if (DamageTypes.ContainsKey(DamageClass.Magic))
++					DamageTypes[DamageClass.Magic] = value;
++			}
 +		}
 +		internal bool ranged {
-+			get => DamageTypes[DamageClass.Ranged];
-+			set => DamageTypes[DamageClass.Ranged] = value;
++			get {
++				if (DamageTypes.ContainsKey(DamageClass.Ranged))
++					return DamageTypes[DamageClass.Ranged];
++
++				return false;
++			}
++
++			set {
++				if (DamageTypes.ContainsKey(DamageClass.Ranged))
++					DamageTypes[DamageClass.Ranged] = value;
++			}
 +		}
 +		internal bool summon {
-+			get => DamageTypes[DamageClass.Summon];
-+			set => DamageTypes[DamageClass.Summon] = value;
++			get {
++				if (DamageTypes.ContainsKey(DamageClass.Summon))
++					return DamageTypes[DamageClass.Summon];
++
++				return false;
++			}
++
++			set {
++				if (DamageTypes.ContainsKey(DamageClass.Summon))
++					DamageTypes[DamageClass.Summon] = value;
++			}
 +		}
  		public bool sentry;
  		public int reuseDelay;

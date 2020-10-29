@@ -1367,7 +1367,7 @@
  						if (diff == 1)
  							black = new Microsoft.Xna.Framework.Color((byte)((float)(int)mcColor.R * num4), (byte)((float)(int)mcColor.G * num4), (byte)((float)(int)mcColor.B * num4), a);
  
-@@ -15162,95 +_,113 @@
+@@ -15162,95 +_,125 @@
  
  						if (hoverItem.expert || rare == -12)
  							black = new Microsoft.Xna.Framework.Color((byte)((float)DiscoR * num4), (byte)((float)DiscoG * num4), (byte)((float)DiscoB * num4), a);
@@ -1441,10 +1441,19 @@
 -					float num = 5E-06f;
 -					int damage = item.damage;
 +					LocalizedText tip;
-+					if (item.DamageType != null) {
-+						bool classIsVanilla = item.DamageType.index < DamageClassLoader.DefaultDamageClassCount;
++					if (!item.allDamageTypes.HasValue) {
++						string classes = default;
++						bool multiclass = false;
++						foreach (DamageClass damageClass in DamageClassLoader.DamageClasses) {
++							if (item.DamageTypes[damageClass]) {
++								bool classIsVanilla = damageClass.index < DamageClassLoader.DefaultDamageClassCount;
++								classes += $"{(multiclass ? "/" : string.Empty)}{(classIsVanilla ? string.Empty : " ")}{damageClass.DisplayName}";
++								if (!multiclass)
++									multiclass = true;
++							}
++						}
 +						//'damage' portion is still required on modded ClassNames for the sake of possibility of accurate translations, but the space isn't.
-+						tip = new LocalizedText("", $"{(classIsVanilla ? string.Empty : " ")}{item.DamageType.DisplayName}");
++						tip = new LocalizedText("", classes);
 +					}
 +					else {
 +						tip = Lang.tip[55]; // No damage class
@@ -1485,6 +1494,9 @@
 -						toolTipLine[numLines] += Lang.tip[55].Value;
 -					}
 +					toolTipLine[numLines] = damage + tip.Value;
++					if (item.allDamageTypes.HasValue && item.allDamageTypes.Value) {
++						toolTipLine[numLines] += "(affected by all damage classes)";
++					}
 +					toolTipNames[numLines] = "Damage";
  
  					numLines++;
@@ -1527,7 +1539,7 @@
  						numLines++;
  					}
  
-@@ -15272,6 +_,7 @@
+@@ -15272,10 +_,13 @@
  						else
  							toolTipLine[numLines] = Lang.tip[13].Value;
  
@@ -1535,12 +1547,19 @@
  						numLines++;
  					}
  
-@@ -15285,6 +_,8 @@
+ 					float num6 = item.knockBack;
++					Modifier KBmult = player[myPlayer].GetWeaponKnockback(item, item.knockBack);
++					/*
+ 					if (item.summon)
+ 						num6 += player[myPlayer].minionKB;
+ 
+@@ -15284,7 +_,8 @@
+ 
  					if (player[myPlayer].inventory[player[myPlayer].selectedItem].type == 3106 && item.type == 3106)
  						num6 += num6 * (1f - player[myPlayer].stealth);
- 
-+					ItemLoader.GetWeaponKnockback(item, player[myPlayer], ref num6);
-+					PlayerHooks.GetWeaponKnockback(player[myPlayer], item, ref num6);
+-
++					*/
++					num6 *= KBmult;
  					if (num6 == 0f)
  						toolTipLine[numLines] = Lang.tip[14].Value;
  					else if ((double)num6 <= 1.5)

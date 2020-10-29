@@ -298,7 +298,7 @@ namespace {modNameTrimmed}.Items
 		public override void SetDefaults() 
 		{{
 			item.damage = 50;
-			item.DamageType = DamageClass.Melee;
+			item.DamageTypes[DamageClass.Melee] = true;
 			item.width = 40;
 			item.height = 40;
 			item.useTime = 20;

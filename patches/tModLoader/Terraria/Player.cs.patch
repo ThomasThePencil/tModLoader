@@ -1884,7 +1884,7 @@
  			if (maxTurretsOld != maxTurrets) {
  				UpdateMaxTurrets();
  				maxTurretsOld = maxTurrets;
-@@ -17992,8 +_,10 @@
+@@ -17992,10 +_,13 @@
  
  				meleeDamage += (1f - stealth) * 3f;
  				meleeCrit += (int)((1f - stealth) * 30f);
@@ -1895,15 +1895,26 @@
 +				*/
  
  				aggro -= (int)((1f - stealth) * 750f);
++				GetKnockback(DamageClass.Melee) += 1f - stealth;
  				if (stealthTimer > 0)
+ 					stealthTimer--;
+ 			}
 @@ -18026,6 +_,7 @@
  				rangedDamage += (1f - stealth) * 0.6f;
  				rangedCrit += (int)((1f - stealth) * 10f);
  				aggro -= (int)((1f - stealth) * 750f);
-+				GetKnockback(DamageClass.Ranged) += (int)((1f - stealth) * 0.5f);
++				GetKnockback(DamageClass.Ranged) += (1f - stealth) * 0.5f;
  				if (stealthTimer > 0)
  					stealthTimer--;
  			}
+@@ -18045,6 +_,7 @@
+ 					rangedDamage += (1f - stealth) * 0.8f;
+ 					rangedCrit += (int)((1f - stealth) * 20f);
+ 					aggro -= (int)((1f - stealth) * 1200f);
++					GetKnockback(DamageClass.Ranged) += (1f - stealth) * 0.5f;
+ 					accRunSpeed *= 0.3f;
+ 					maxRunSpeed *= 0.3f;
+ 					if (mount.Active)
 @@ -18144,6 +_,7 @@
  			}
  
@@ -2864,7 +2875,7 @@
  						ItemCheck_Shoot(i, item, weaponDamage);
  
  					ItemCheck_UseWiringTools(item);
-@@ -29909,15 +_,15 @@
+@@ -29909,7 +_,8 @@
  
  						if (Main.myPlayer == i && item.damage > 0) {
  							int num = weaponDamage;
@@ -2874,15 +2885,18 @@
  							float num2 = 1f;
  							if (kbGlove)
  								num2 += 1f;
- 
+@@ -29917,10 +_,9 @@
  							if (kbBuff)
  								num2 += 0.5f;
--
+ 
 -							knockBack *= num2;
-+							*/
  							if (inventory[selectedItem].type == 3106)
  								knockBack += knockBack * (1f - stealth);
- 
+-
++							*/
+ 							List<ushort> ignoreList2 = ItemCheck_GetTileCutIgnoreList(item);
+ 							ItemCheck_CutTiles(item, itemRectangle, ignoreList2);
+ 							ItemCheck_MeleeHitNPCs(item, itemRectangle, num, knockBack);
 @@ -29931,6 +_,9 @@
  				}
  
@@ -3236,7 +3250,7 @@
  					if (buffType[i] == 27 || buffType[i] == 101 || buffType[i] == 102) {
  						DelBuff(i);
  						i--;
-@@ -36342,6 +_,13 @@
+@@ -36342,6 +_,19 @@
  		}
  
  		public float GetWeaponKnockback(Item sItem, float KnockBack) {
@@ -3245,6 +3259,12 @@
 +				if (sItem.DamageTypes[damageClass]) {
 +					knockback &= GetDamage(damageClass);
 +				}
++			}
++
++			if (sItem.ranged) {
++
++				if (magicQuiver && (sItem.useAmmo == AmmoID.Arrow || sItem.useAmmo == AmmoID.Stake))
++					knockback *= 1.1f;
 +			}
 +			/*
  			if (sItem.summon)
@@ -3258,7 +3278,7 @@
 +			*/
 +			ItemLoader.GetWeaponKnockback(sItem, this, ref knockback);
 +			PlayerHooks.GetWeaponKnockback(this, sItem, ref knockback);
-+			int kb = (int)(KnockBack * (float)knockback);
++			KnockBack = (int)(KnockBack * (float)knockback);
  			return KnockBack;
  		}
  
