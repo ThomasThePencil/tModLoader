@@ -36,7 +36,7 @@
  		public float minionSlots;
  		public int minionPos;
  		public int restrikeDelay;
-@@ -112,9 +_,22 @@
+@@ -112,9 +_,58 @@
  		public bool ownerHitCheck;
  		public int[] playerImmune = new int[255];
  		public string miscText = "";
@@ -44,20 +44,56 @@
 -		public bool ranged;
 -		public bool magic;
 +		internal bool melee {
-+			get => DamageTypes[DamageClass.Melee];
-+			set => DamageTypes[DamageClass.Melee] = value;
++			get {
++				if (DamageTypes.ContainsKey(DamageClass.Melee))
++					return DamageTypes[DamageClass.Melee];
++
++				return false;
++			}
++
++			set {
++				if (DamageTypes.ContainsKey(DamageClass.Melee))
++					DamageTypes[DamageClass.Melee] = value;
++			}
 +		}
 +		internal bool magic {
-+			get => DamageTypes[DamageClass.Magic];
-+			set => DamageTypes[DamageClass.Magic] = value;
++			get {
++				if (DamageTypes.ContainsKey(DamageClass.Magic))
++					return DamageTypes[DamageClass.Magic];
++
++				return false;
++			}
++
++			set {
++				if (DamageTypes.ContainsKey(DamageClass.Magic))
++					DamageTypes[DamageClass.Magic] = value;
++			}
 +		}
 +		internal bool ranged {
-+			get => DamageTypes[DamageClass.Ranged];
-+			set => DamageTypes[DamageClass.Ranged] = value;
++			get {
++				if (DamageTypes.ContainsKey(DamageClass.Ranged))
++					return DamageTypes[DamageClass.Ranged];
++
++				return false;
++			}
++
++			set {
++				if (DamageTypes.ContainsKey(DamageClass.Ranged))
++					DamageTypes[DamageClass.Ranged] = value;
++			}
 +		}
 +		internal bool minion {
-+			get => DamageTypes[DamageClass.Summon];
-+			set => DamageTypes[DamageClass.Summon] = value;
++			get {
++				if (DamageTypes.ContainsKey(DamageClass.Summon))
++					return DamageTypes[DamageClass.Summon];
++
++				return false;
++			}
++
++			set {
++				if (DamageTypes.ContainsKey(DamageClass.Summon))
++					DamageTypes[DamageClass.Summon] = value;
++			}
 +		}
  		public bool coldDamage;
  		public bool noEnchantments;
@@ -85,7 +121,7 @@
  				for (int j = 0; j < 200; j++) {
  					perIDStaticNPCImmunity[i][j] = 0u;
  				}
-@@ -217,7 +_,36 @@
+@@ -217,7 +_,38 @@
  			}
  		}
  
@@ -115,8 +151,10 @@
 +			globalProjectiles = new GlobalProjectile[0];
 +			allDamageTypes = null;
 +			DamageTypes = new Dictionary<DamageClass, bool>();
++			ScalingForDamageTypes = new Dictionary<DamageClass, float>();
 +			foreach (DamageClass damageClass in DamageClassLoader.DamageClasses) {
 +				DamageTypes.Add(damageClass, false);
++				ScalingForDamageTypes.Add(damageClass, 1f);
 +			}
 +			nameOverride = null;
  			ownerHitCheckDistance = 1000f;
@@ -461,7 +499,7 @@
 +					Modifier damageFactor = player.allDamage;
 +					foreach(DamageClass damageClass in DamageClassLoader.DamageClasses) {
 +						if (DamageTypes[damageClass]) {
-+							damageFactor &= player.GetDamage(damageClass);
++							damageFactor &= player.GetDamage(damageClass) * ScalingForDamageTypes[damageClass];
 +						}
 +					}
 +					damageNum *= damageFactor;

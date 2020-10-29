@@ -3250,23 +3250,24 @@
  					if (buffType[i] == 27 || buffType[i] == 101 || buffType[i] == 102) {
  						DelBuff(i);
  						i--;
-@@ -36342,6 +_,19 @@
+@@ -36342,6 +_,20 @@
  		}
  
  		public float GetWeaponKnockback(Item sItem, float KnockBack) {
-+			Modifier knockback = allDamage;
++			Modifier kbMult = allKB;
 +			foreach (DamageClass damageClass in DamageClassLoader.DamageClasses) {
 +				if (sItem.DamageTypes[damageClass]) {
-+					knockback &= GetDamage(damageClass);
++					kbMult &= GetKnockback(damageClass) * sItem.ScalingForDamageTypes[damageClass];
 +				}
 +			}
 +
 +			if (sItem.ranged) {
-+
 +				if (magicQuiver && (sItem.useAmmo == AmmoID.Arrow || sItem.useAmmo == AmmoID.Stake))
-+					knockback *= 1.1f;
++					kbMult *= 1.1f;
 +			}
 +			/*
++			 * These have been adjusted accordingly and moved to their respective areas
++
  			if (sItem.summon)
  				KnockBack += minionKB;
  
@@ -3276,9 +3277,9 @@
  				KnockBack *= 1f + (1f - stealth) * 0.5f;
 -
 +			*/
-+			ItemLoader.GetWeaponKnockback(sItem, this, ref knockback);
-+			PlayerHooks.GetWeaponKnockback(this, sItem, ref knockback);
-+			KnockBack = (int)(KnockBack * (float)knockback);
++			ItemLoader.GetWeaponKnockback(sItem, this, ref kbMult);
++			PlayerHooks.GetWeaponKnockback(this, sItem, ref kbMult);
++			KnockBack = (int)(KnockBack * (float)kbMult);
  			return KnockBack;
  		}
  
@@ -3287,7 +3288,7 @@
 +
 +			foreach (DamageClass damageClass in DamageClassLoader.DamageClasses) {
 +				if (sItem.DamageTypes[damageClass]) {
-+					crit += GetCrit(damageClass);
++					crit += GetCrit(damageClass) * sItem.ScalingForDamageTypes[damageClass];
 +				}
 +			}
 +			/*
@@ -3343,7 +3344,7 @@
 +			Modifier damage = allDamage;
 +			foreach (DamageClass damageClass in DamageClassLoader.DamageClasses) {
 +				if (sItem.DamageTypes[damageClass]) {
-+					damage &= GetDamage(damageClass);
++					damage &= GetDamage(damageClass) * sItem.ScalingForDamageTypes[damageClass];
 +				}
 +			}
 +			/*

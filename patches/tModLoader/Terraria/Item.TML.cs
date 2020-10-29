@@ -26,6 +26,13 @@ namespace Terraria
 		public Dictionary<DamageClass, bool> DamageTypes = new Dictionary<DamageClass, bool>();
 
 		/// <summary>
+		/// The scaling factor for each of the damage types that this Item is affected by. All are 1f by default.
+		/// Vanilla classes use DamageClass.Melee/Ranged/Magic/Summon/Throwing. Use ModContent.GetInstance<T>() for custom damage types.
+		/// These will only matter if you leave Item.allDamageTypes null.
+		/// </summary>
+		public Dictionary<DamageClass, float> ScalingForDamageTypes = new Dictionary<DamageClass, float>();
+
+		/// <summary>
 		/// Should all damage types affect this Item? Should none of them? That's what you decide here.
 		/// Set to true to make all damage types affect this Item.
 		/// Set to false to make no damage types affect this Item.

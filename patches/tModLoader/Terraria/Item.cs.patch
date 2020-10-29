@@ -412,7 +412,7 @@
  				netID = 0;
  				type = 0;
  				stack = 0;
-@@ -44890,14 +_,23 @@
+@@ -44890,14 +_,25 @@
  		public void ResetStats(int Type) {
  			tooltipContext = -1;
  			BestiaryNotes = null;
@@ -420,8 +420,10 @@
 +			globalItems = new GlobalItem[0];
 +			allDamageTypes = null;
 +			DamageTypes = new Dictionary<DamageClass, bool>();
++			ScalingForDamageTypes = new Dictionary<DamageClass, float>();
 +			foreach (DamageClass damageClass in DamageClassLoader.DamageClasses) {
 +				DamageTypes.Add(damageClass, false);
++				ScalingForDamageTypes.Add(damageClass, 1f);
 +			}
  			sentry = false;
  			canBePlacedInVanityRegardlessOfConditions = false;
