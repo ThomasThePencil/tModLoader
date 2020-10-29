@@ -8,11 +8,12 @@
  using Terraria.Audio;
  using Terraria.Enums;
  using Terraria.GameContent;
-@@ -10,10 +_,11 @@
+@@ -10,10 +_,12 @@
  using Terraria.ID;
  using Terraria.UI;
  using Terraria.Utilities;
 +using Terraria.ModLoader;
++using System.Collections.Generic;
  
  namespace Terraria
  {
@@ -39,20 +40,20 @@
 -		public bool ranged;
 -		public bool summon;
 +		internal bool melee {
-+			get => DamageType == DamageClass.Melee;
-+			set => DamageType = value ? DamageClass.Melee : (melee ? null : DamageType);
++			get => DamageTypes[DamageClass.Melee];
++			set => DamageTypes[DamageClass.Melee] = value;
 +		}
 +		internal bool magic {
-+			get => DamageType == DamageClass.Magic;
-+			set => DamageType = value ? DamageClass.Magic : (magic ? null : DamageType);
++			get => DamageTypes[DamageClass.Magic];
++			set => DamageTypes[DamageClass.Magic] = value;
 +		}
 +		internal bool ranged {
-+			get => DamageType == DamageClass.Ranged;
-+			set => DamageType = value ? DamageClass.Ranged : (ranged ? null : DamageType);
++			get => DamageTypes[DamageClass.Ranged];
++			set => DamageTypes[DamageClass.Ranged] = value;
 +		}
 +		internal bool summon {
-+			get => DamageType == DamageClass.Summon;
-+			set => DamageType = value ? DamageClass.Summon : (summon ? null : DamageType);
++			get => DamageTypes[DamageClass.Summon];
++			set => DamageTypes[DamageClass.Summon] = value;
 +		}
  		public bool sentry;
  		public int reuseDelay;
@@ -355,7 +356,7 @@
  			dye = (byte)GameShaders.Armor.GetShaderIdFromItemId(type);
  			if (hairDye != 0)
  				hairDye = GameShaders.Hair.GetShaderIdFromItemId(type);
-@@ -44876,11 +_,12 @@
+@@ -44876,11 +_,18 @@
  				maxStack = 999;
  
  			netID = type;
@@ -363,18 +364,29 @@
  			if (!noMatCheck)
  				material = ItemID.Sets.IsAMaterial[type];
  
++			if (allDamageTypes.HasValue) {
++				foreach (DamageClass damageClass in DamageClassLoader.DamageClasses) {
++					DamageTypes[damageClass] = allDamageTypes.Value;
++				}
++			}
++
  			RebuildTooltip();
 -			if (type > 0 && type < 5088 && ItemID.Sets.Deprecated[type]) {
 +			if (type > 0 && ItemID.Sets.Deprecated[type]) {
  				netID = 0;
  				type = 0;
  				stack = 0;
-@@ -44890,14 +_,18 @@
+@@ -44890,14 +_,23 @@
  		public void ResetStats(int Type) {
  			tooltipContext = -1;
  			BestiaryNotes = null;
 +			modItem = null;
 +			globalItems = new GlobalItem[0];
++			allDamageTypes = null;
++			DamageTypes = new Dictionary<DamageClass, bool>();
++			foreach (DamageClass damageClass in DamageClassLoader.DamageClasses) {
++				DamageTypes.Add(damageClass, false);
++			}
  			sentry = false;
  			canBePlacedInVanityRegardlessOfConditions = false;
  			DD2Summon = false;
@@ -388,6 +400,21 @@
  			instanced = false;
  			questItem = false;
  			fishingPole = 0;
+@@ -44914,10 +_,10 @@
+ 			mech = false;
+ 			flame = false;
+ 			reuseDelay = 0;
+-			melee = false;
++			//melee = false;
+-			magic = false;
++			//magic = false;
+-			ranged = false;
++			//ranged = false;
+-			summon = false;
++			//summon = false;
+ 			placeStyle = 0;
+ 			buffTime = 0;
+ 			buffType = 0;
 @@ -44992,6 +_,10 @@
  		}
  

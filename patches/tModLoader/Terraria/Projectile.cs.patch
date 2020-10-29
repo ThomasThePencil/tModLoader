@@ -44,20 +44,20 @@
 -		public bool ranged;
 -		public bool magic;
 +		internal bool melee {
-+			get => DamageType == DamageClass.Melee;
-+			set => DamageType = value ? DamageClass.Melee : (melee ? null : DamageType);
++			get => DamageTypes[DamageClass.Melee];
++			set => DamageTypes[DamageClass.Melee] = value;
 +		}
 +		internal bool magic {
-+			get => DamageType == DamageClass.Magic;
-+			set => DamageType = value ? DamageClass.Magic : (magic ? null : DamageType);
++			get => DamageTypes[DamageClass.Magic];
++			set => DamageTypes[DamageClass.Magic] = value;
 +		}
 +		internal bool ranged {
-+			get => DamageType == DamageClass.Ranged;
-+			set => DamageType = value ? DamageClass.Ranged : (ranged ? null : DamageType);
++			get => DamageTypes[DamageClass.Ranged];
++			set => DamageTypes[DamageClass.Ranged] = value;
 +		}
 +		internal bool minion {
-+			get => DamageType == DamageClass.Summon;
-+			set => DamageType = value ? DamageClass.Summon : (minion ? null : DamageType);
++			get => DamageTypes[DamageClass.Summon];
++			set => DamageTypes[DamageClass.Summon] = value;
 +		}
  		public bool coldDamage;
  		public bool noEnchantments;
@@ -85,7 +85,7 @@
  				for (int j = 0; j < 200; j++) {
  					perIDStaticNPCImmunity[i][j] = 0u;
  				}
-@@ -217,7 +_,31 @@
+@@ -217,7 +_,36 @@
  			}
  		}
  
@@ -113,11 +113,42 @@
  		public void SetDefaults(int Type) {
 +			modProjectile = null;
 +			globalProjectiles = new GlobalProjectile[0];
++			allDamageTypes = null;
++			DamageTypes = new Dictionary<DamageClass, bool>();
++			foreach (DamageClass damageClass in DamageClassLoader.DamageClasses) {
++				DamageTypes.Add(damageClass, false);
++			}
 +			nameOverride = null;
  			ownerHitCheckDistance = 1000f;
  			counterweight = false;
  			sentry = false;
-@@ -7891,9 +_,8 @@
+@@ -260,13 +_,13 @@
+ 
+ 			ResetLocalNPCHitImmunity();
+ 			noDropItem = false;
+-			minion = false;
++			//minion = false;
+ 			minionSlots = 0f;
+ 			soundDelay = 0;
+ 			spriteDirection = 1;
+-			melee = false;
++			//melee = false;
+-			ranged = false;
++			//ranged = false;
+-			magic = false;
++			//magic = false;
+ 			ownerHitCheck = false;
+ 			hide = false;
+ 			lavaWet = false;
+@@ -6064,6 +_,7 @@
+ 				aiStyle = 127;
+ 				friendly = true;
+ 				magic = true;
++				minion = true;
+ 				tileCollide = false;
+ 				penetrate = -1;
+ 				usesLocalNPCImmunity = true;
+@@ -7891,13 +_,17 @@
  				usesLocalNPCImmunity = true;
  				localNPCHitCooldown = 80;
  			}
@@ -129,6 +160,15 @@
  
  			width = (int)((float)width * scale);
  			height = (int)((float)height * scale);
+ 			maxPenetrate = penetrate;
++			if (allDamageTypes.HasValue) {
++				foreach (DamageClass damageClass in DamageClassLoader.DamageClasses) {
++					DamageTypes[damageClass] = allDamageTypes.Value;
++				}
++			}
+ 		}
+ 
+ 		private void DefaultToWhip() {
 @@ -7926,6 +_,7 @@
  			return result;
  		}
@@ -412,6 +452,23 @@
  			if (myRect.Intersects(targetRect))
  				return true;
  
+@@ -11055,7 +_,15 @@
+ 
+ 				if (numUpdates == -1 && (minion || sentry)) {
+ 					Player player = Main.player[owner];
+-					damage = (int)((float)originalDamage * player.minionDamage);
++					int damageNum = originalDamage;
++					Modifier damageFactor = player.allDamage;
++					foreach(DamageClass damageClass in DamageClassLoader.DamageClasses) {
++						if (DamageTypes[damageClass]) {
++							damageFactor &= player.GetDamage(damageClass);
++						}
++					}
++					damageNum *= damageFactor;
++					damage = Math.Max(0, damageNum);
+ 				}
+ 
+ 				if (minion && numUpdates == -1 && type != 625 && type != 628) {
 @@ -11771,17 +_,21 @@
  					overrideHeight = 4;
  				}
@@ -578,6 +635,15 @@
  					if (player.channel && flag10 && !player.noItems && !player.CCed) {
  						if (ai[0] == 1f) {
  							Vector2 center2 = base.Center;
+@@ -41961,7 +_,7 @@
+ 							if (float.IsNaN(vector8.X) || float.IsNaN(vector8.Y))
+ 								vector8 = -Vector2.UnitY;
+ 
+-							int num39 = damage;
++							int num39 = player.GetWeaponDamage(player.inventory[player.selectedItem]);
+ 							for (int m = 0; m < 6; m++) {
+ 								NewProjectile(center2.X, center2.Y, vector8.X, vector8.Y, 632, num39, knockBack, owner, m, whoAmI);
+ 							}
 @@ -42961,6 +_,11 @@
  			if (num7 < 1f)
  				num7 = 1f;

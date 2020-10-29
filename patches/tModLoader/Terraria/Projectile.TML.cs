@@ -14,9 +14,19 @@ namespace Terraria
 		internal GlobalProjectile[] globalProjectiles = new GlobalProjectile[0];
 
 		/// <summary>
-		/// The damage type of this Projectile. Assign to DamageClass.Melee/Ranged/Magic/Summon/Throwing, or ModContent.GetInstance<T>() for custom damage types.
+		/// The damage types that this Projectile is affected by.
+		/// Vanilla classes use DamageClass.Melee/Ranged/Magic/Summon/Throwing. Use ModContent.GetInstance<T>() for custom damage types.
+		/// These will only matter if you leave Projectile.allDamageTypes null.
 		/// </summary>
-		public DamageClass DamageType { get; set; }
+		public Dictionary<DamageClass, bool> DamageTypes = new Dictionary<DamageClass, bool>();
+
+		/// <summary>
+		/// Should all damage types affect this Projectile? Should none of them? That's what you decide here.
+		/// Set to true to make all damage types affect this Projectile.
+		/// Set to false to make no damage types affect this Projectile.
+		/// Leave this field null to let the individual DamageTypes entries decide.
+		/// </summary>
+		public bool? allDamageTypes;
 
 		// Get
 

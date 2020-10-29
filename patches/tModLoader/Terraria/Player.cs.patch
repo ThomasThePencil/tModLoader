@@ -57,7 +57,7 @@
  		public int[] buffType = new int[22];
  		public int[] buffTime = new int[22];
  		public bool[] buffImmune = new bool[327];
-@@ -1055,16 +_,17 @@
+@@ -1055,17 +_,19 @@
  		public bool parryDamageBuff;
  		public bool ballistaPanic;
  		public bool JustDroppedAnItem;
@@ -71,6 +71,7 @@
 -		public float arrowDamage = 1f;
 -		public float rocketDamage = 1f;
 -		public float minionDamage = 1f;
+-		public float minionKB;
 +		internal ref Modifier meleeCrit => ref GetCrit(DamageClass.Melee);
 +		internal ref Modifier magicCrit => ref GetCrit(DamageClass.Magic);
 +		internal ref Modifier rangedCrit => ref GetCrit(DamageClass.Ranged);
@@ -82,9 +83,11 @@
 +		public Modifier arrowDamage = Modifier.One;
 +		public Modifier rocketDamage = Modifier.One;
 +		internal ref Modifier minionDamage => ref GetDamage(DamageClass.Summon);
- 		public float minionKB;
++		public Modifier allKB = Modifier.One;
++		internal ref Modifier minionKB => ref GetKnockback(DamageClass.Summon);
  		public float meleeSpeed = 1f;
  		public float moveSpeed = 1f;
+ 		public float pickSpeed = 1f;
 @@ -1101,8 +_,26 @@
  		public bool oldAdjWater;
  		public bool oldAdjHoney;
@@ -1237,7 +1240,7 @@
  			}
  
  			if (dd2Accessory) {
-@@ -9278,23 +_,14 @@
+@@ -9278,22 +_,16 @@
  				maxTurrets++;
  			}
  
@@ -1259,11 +1262,12 @@
  
 -			if (wet && ShouldFloatInWater)
 -				accFlipper = true;
--
 +			PlayerHooks.UpdateVanityAccessories(this);
++			if (kbGlove)
++				GetKnockback(DamageClass.Melee) += 1f;
+ 
  			if (whoAmI == Main.myPlayer && Main.SceneMetrics.HasClock && accWatch < 3)
  				accWatch++;
- 
 @@ -9494,7 +_,7 @@
  		}
  
@@ -1499,7 +1503,7 @@
  								SmartSelect_SelectItem(i);
  								return;
  						}
-@@ -12689,13 +_,14 @@
+@@ -12689,16 +_,18 @@
  			lifeRegen = 0;
  			manaCost = 1f;
  			meleeSpeed = 1f;
@@ -1520,7 +1524,12 @@
 +			magicCrit = new Modifier(4);
  			hasFootball = false;
  			drawingFootball = false;
- 			minionKB = 0f;
+-			minionKB = 0f;
++			allKB = Modifier.One;
++			minionKB = Modifier.One;
+ 			moveSpeed = 1f;
+ 			boneArmor = false;
+ 			honey = false;
 @@ -12739,9 +_,9 @@
  			ammoCost75 = false;
  			manaRegenBuff = false;
@@ -1597,42 +1606,66 @@
  				}
  
  				if (velocity.Y == 0f || wingsLogic > 0 || mount.CanFly()) {
-@@ -13898,7 +_,7 @@
+@@ -13898,7 +_,10 @@
  				if (flag4)
  					num5 = 30;
  
 -				float damage = (float)num5 * minionDamage;
 +				float damage = (float)num5 * minionDamage.additive;
++				Modifier damageFactor = allDamage;
++				damageFactor &= minionDamage;
++				damage *= damageFactor;
  				float knockback = 10f;
  				if (flag4)
  					knockback = 7f;
-@@ -13915,7 +_,7 @@
+@@ -13915,7 +_,10 @@
  
  				rect2.Width = 2;
  				rect2.Inflate(6, 12);
 -				float damage2 = 100f * minionDamage;
-+				float damage2 = 100f * minionDamage.additive;
++				float damage2 = 100f;
++				Modifier damageFactor = allDamage;
++				damageFactor &= minionDamage;
++				damage2 *= damageFactor;
  				float knockback2 = 12f;
  				int nPCImmuneTime2 = 30;
  				int playerImmuneTime2 = 6;
-@@ -13929,7 +_,7 @@
+@@ -13929,7 +_,10 @@
  
  				rect3.Width = 2;
  				rect3.Inflate(6, 12);
 -				float damage3 = 120f * minionDamage;
-+				float damage3 = 120f * minionDamage.additive;
++				float damage3 = 120f;
++				Modifier damageFactor = allDamage;
++				damageFactor &= minionDamage;
++				damage3 *= damageFactor;
  				float knockback3 = 12f;
  				int nPCImmuneTime3 = 30;
  				int playerImmuneTime3 = 6;
-@@ -13943,7 +_,7 @@
+@@ -13943,7 +_,10 @@
  
  				rect4.Width = 2;
  				rect4.Inflate(6, 12);
 -				float damage4 = 90f * minionDamage;
-+				float damage4 = 90f * minionDamage.additive;
++				float damage4 = 90f;
++				Modifier damageFactor = allDamage;
++				damageFactor &= minionDamage;
++				damage4 *= damageFactor;
  				float knockback4 = 10f;
  				int nPCImmuneTime4 = 30;
  				int playerImmuneTime4 = 6;
+@@ -13957,7 +_,10 @@
+ 
+ 				rect5.Width = 2;
+ 				rect5.Inflate(6, 12);
+-				float damage5 = 40f * minionDamage;
++				float damage5 = 40f;
++				Modifier damageFactor = allDamage;
++				damageFactor &= minionDamage;
++				damage5 *= damageFactor;
+ 				float knockback5 = 10f;
+ 				int nPCImmuneTime5 = 30;
+ 				int playerImmuneTime5 = 12;
 @@ -14123,7 +_,7 @@
  			}
  
@@ -1651,24 +1684,48 @@
  						float knockback = 5f;
  						int direction = base.direction;
  						if (velocity.X < 0f)
-@@ -14620,7 +_,7 @@
+@@ -14620,14 +_,18 @@
  
  						Rectangle rect = nPC.getRect();
  						if (rectangle.Intersects(rect) && (nPC.noTileCollide || CanHit(nPC))) {
 -							float num = 30f * meleeDamage;
-+							float num = 30f * meleeDamage.additive;
- 							float num2 = 9f;
+-							float num2 = 9f;
++							Modifier damageMult = allDamage & GetDamage(DamageClass.Melee);
++							float num = 30f * damageMult;
++							Modifier KBmult = allKB & GetKnockback(DamageClass.Melee);
++							float num2 = 9f * KBmult;
  							bool crit = false;
++							/*
  							if (kbGlove)
-@@ -14670,7 +_,7 @@
+ 								num2 *= 2f;
+ 
+ 							if (kbBuff)
+ 								num2 *= 1.5f;
++							*/
+ 
+ 							if (Main.rand.Next(100) < meleeCrit)
+ 								crit = true;
+@@ -14670,14 +_,18 @@
  							ConsumeSolarFlare();
  						}
  
 -						float num4 = 150f * meleeDamage;
-+						float num4 = 150f * meleeDamage.additive;
- 						float num5 = 9f;
+-						float num5 = 9f;
++						Modifier damageMult = allDamage & GetDamage(DamageClass.Melee);
++						float num4 = 150f * damageMult;
++						Modifier KBmult = allKB & GetKnockback(DamageClass.Melee);
++						float num5 = 9f * KBmult;
  						bool crit2 = false;
++						/*
  						if (kbGlove)
+ 							num5 *= 2f;
+ 
+ 						if (kbBuff)
+ 							num5 *= 1.5f;
++						*/
+ 
+ 						if (Main.rand.Next(100) < meleeCrit)
+ 							crit2 = true;
 @@ -15285,8 +_,10 @@
  				float num5 = 0.1f;
  				if (wingsLogic == 26) {
@@ -1800,6 +1857,16 @@
  			if (whoAmI == Main.myPlayer) {
  				if (!onFire && !poisoned)
  					trapDebuffSource = false;
+@@ -17857,6 +_,9 @@
+ 				UpdatePetLight(i);
+ 			}
+ 
++			if (kbBuff)
++				allKB += 0.5f;
++
+ 			UpdateLuckFactors();
+ 			RecalculateLuck();
+ 			if (luckNeedsSync && whoAmI == Main.myPlayer) {
 @@ -17892,7 +_,7 @@
  			hideWolf = false;
  			forceWerewolf = false;
@@ -1829,6 +1896,14 @@
  
  				aggro -= (int)((1f - stealth) * 750f);
  				if (stealthTimer > 0)
+@@ -18026,6 +_,7 @@
+ 				rangedDamage += (1f - stealth) * 0.6f;
+ 				rangedCrit += (int)((1f - stealth) * 10f);
+ 				aggro -= (int)((1f - stealth) * 750f);
++				GetKnockback(DamageClass.Ranged) += (int)((1f - stealth) * 0.5f);
+ 				if (stealthTimer > 0)
+ 					stealthTimer--;
+ 			}
 @@ -18144,6 +_,7 @@
  			}
  
@@ -2789,16 +2864,25 @@
  						ItemCheck_Shoot(i, item, weaponDamage);
  
  					ItemCheck_UseWiringTools(item);
-@@ -29921,6 +_,9 @@
+@@ -29909,15 +_,15 @@
+ 
+ 						if (Main.myPlayer == i && item.damage > 0) {
+ 							int num = weaponDamage;
+-							float knockBack = item.knockBack;
++							float knockBack = GetWeaponKnockback(item, item.knockBack);
++							/*
+ 							float num2 = 1f;
+ 							if (kbGlove)
+ 								num2 += 1f;
+ 
+ 							if (kbBuff)
+ 								num2 += 0.5f;
+-
+-							knockBack *= num2;
++							*/
  							if (inventory[selectedItem].type == 3106)
  								knockBack += knockBack * (1f - stealth);
  
-+							ItemLoader.GetWeaponKnockback(item, this, ref knockBack);
-+							PlayerHooks.GetWeaponKnockback(this, item, ref knockBack);
-+
- 							List<ushort> ignoreList2 = ItemCheck_GetTileCutIgnoreList(item);
- 							ItemCheck_CutTiles(item, itemRectangle, ignoreList2);
- 							ItemCheck_MeleeHitNPCs(item, itemRectangle, num, knockBack);
 @@ -29931,6 +_,9 @@
  				}
  
@@ -3152,23 +3236,41 @@
  					if (buffType[i] == 27 || buffType[i] == 101 || buffType[i] == 102) {
  						DelBuff(i);
  						i--;
-@@ -36357,48 +_,75 @@
+@@ -36342,6 +_,13 @@
+ 		}
+ 
+ 		public float GetWeaponKnockback(Item sItem, float KnockBack) {
++			Modifier knockback = allDamage;
++			foreach (DamageClass damageClass in DamageClassLoader.DamageClasses) {
++				if (sItem.DamageTypes[damageClass]) {
++					knockback &= GetDamage(damageClass);
++				}
++			}
++			/*
+ 			if (sItem.summon)
+ 				KnockBack += minionKB;
+ 
+@@ -36356,49 +_,82 @@
+ 
  			if (sItem.ranged && setVortex)
  				KnockBack *= 1f + (1f - stealth) * 0.5f;
- 
-+			ItemLoader.GetWeaponKnockback(sItem, this, ref KnockBack);
-+			PlayerHooks.GetWeaponKnockback(this, sItem, ref KnockBack);
+-
++			*/
++			ItemLoader.GetWeaponKnockback(sItem, this, ref knockback);
++			PlayerHooks.GetWeaponKnockback(this, sItem, ref knockback);
++			int kb = (int)(KnockBack * (float)knockback);
  			return KnockBack;
  		}
  
  		public int GetWeaponCrit(Item sItem) {
 +			int crit = 0;
 +
-+			if (sItem.DamageType != null) {
-+				crit += GetCrit(sItem.DamageType);
-+				goto SkipVanillaCrit;
++			foreach (DamageClass damageClass in DamageClassLoader.DamageClasses) {
++				if (sItem.DamageTypes[damageClass]) {
++					crit += GetCrit(damageClass);
++				}
 +			}
-+
++			/*
  			if (sItem.melee)
 -				return meleeCrit;
 +				crit += meleeCrit;
@@ -3179,12 +3281,12 @@
  
  			if (sItem.magic)
 -				return magicCrit;
+-
+-			return 0;
 +				crit += magicCrit;
- 
-+			SkipVanillaCrit:
++			*/
 +			ItemLoader.GetWeaponCrit(sItem, this, ref crit);
 +			PlayerHooks.GetWeaponCrit(this, sItem, ref crit);
--			return 0;
 +			return crit;
  		}
  
@@ -3214,18 +3316,23 @@
 -			}
 -
 -			return num;
-+			if (sItem.DamageType == null && (!sItem.modItem?.IgnoreDamageModifiers ?? true)) {
++			if (sItem.allDamageTypes.HasValue && !sItem.allDamageTypes.Value && (!sItem.modItem?.IgnoreDamageModifiers ?? true)) {
 +				return (int)(sItem.damage * (float)allDamage);
 +			}
-+			
-+			Modifier damage = allDamage & GetDamage(sItem.DamageType);
 +
++			Modifier damage = allDamage;
++			foreach (DamageClass damageClass in DamageClassLoader.DamageClasses) {
++				if (sItem.DamageTypes[damageClass]) {
++					damage &= GetDamage(damageClass);
++				}
++			}
++			/*
 +			if (sItem.melee) {
 +				damage &= meleeDamage;
 +			}
-+
++			*/
 +			if (sItem.ranged) {
-+				damage &= rangedDamage;
++				//damage &= rangedDamage;
 +				if (sItem.useAmmo == AmmoID.Arrow || sItem.useAmmo == AmmoID.Stake)
 +					damage &= arrowDamage;
 +
@@ -3238,7 +3345,7 @@
 +				if (sItem.useAmmo == AmmoID.Rocket || sItem.useAmmo == AmmoID.StyngerBolt || sItem.useAmmo == AmmoID.JackOLantern || sItem.useAmmo == AmmoID.NailFriendly)
 +					damage &= rocketDamage;
 +			}
-+
++			/*
 +			if (sItem.magic) {
 +				damage &= magicDamage;
 +			}
@@ -3246,7 +3353,7 @@
 +			if (sItem.summon) {
 +				damage &= minionDamage;
 +			}
-+
++			*/
 +			if (sItem.modItem?.IgnoreDamageModifiers == true)
 +				return sItem.damage;
 +
@@ -3938,15 +4045,18 @@
  					if (buffType[i] >= 170 && buffType[i] <= 172)
  						DelBuff(i);
  				}
-@@ -39091,7 +_,7 @@
+@@ -39091,8 +_,9 @@
  				}
  			}
  
 -			int damage = (int)(20f * (1f + magicDamage + minionDamage - 2f));
-+			int damage = (int)(20f * (1f + magicDamage.additive + minionDamage.additive - 2f));
- 			_ = Main.projectile[Projectile.NewProjectile(MinionRestTargetPoint, Vector2.Zero, 656, damage, 0f, Main.myPlayer)];
++			//int damage = (int)(20f * (1f + magicDamage.additive + minionDamage.additive - 2f));
+-			_ = Main.projectile[Projectile.NewProjectile(MinionRestTargetPoint, Vector2.Zero, 656, damage, 0f, Main.myPlayer)];
++			//_ = Main.projectile[Projectile.NewProjectile(MinionRestTargetPoint, Vector2.Zero, 656, damage, 0f, Main.myPlayer)];
++			Main.projectile[Projectile.NewProjectile(MinionRestTargetPoint, Vector2.Zero, 656, 20, 0f, Main.myPlayer)].originalDamage = 20;
  		}
  
+ 		public void KeyHoldDown(int keyDir, int holdTime) {
 @@ -39209,7 +_,7 @@
  				return;
  

@@ -19,9 +19,19 @@ namespace Terraria
 		internal GlobalItem[] globalItems = new GlobalItem[0];
 
 		/// <summary>
-		/// The damage type of this Item. Assign to DamageClass.Melee/Ranged/Magic/Summon/Throwing, or ModContent.GetInstance<T>() for custom damage types.
+		/// The damage types that this Item is affected by.
+		/// Vanilla classes use DamageClass.Melee/Ranged/Magic/Summon/Throwing. Use ModContent.GetInstance<T>() for custom damage types.
+		/// These will only matter if you leave Item.allDamageTypes null.
 		/// </summary>
-		public DamageClass DamageType { get; set; }
+		public Dictionary<DamageClass, bool> DamageTypes = new Dictionary<DamageClass, bool>();
+
+		/// <summary>
+		/// Should all damage types affect this Item? Should none of them? That's what you decide here.
+		/// Set to true to make all damage types affect this Item.
+		/// Set to false to make no damage types affect this Item.
+		/// Leave this field null to let the individual DamageTypes entries decide.
+		/// </summary>
+		public bool? allDamageTypes;
 
 		// Get
 
