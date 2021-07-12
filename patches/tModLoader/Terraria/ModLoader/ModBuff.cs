@@ -1,4 +1,4 @@
-using System;
+using Microsoft.Xna.Framework.Graphics;
 using Terraria.GameContent;
 using Terraria.ID;
 
@@ -7,40 +7,35 @@ namespace Terraria.ModLoader
 	/// <summary>
 	/// This class serves as a place for you to define a new buff and how that buff behaves.
 	/// </summary>
-	public class ModBuff:ModTexturedType
+	public abstract class ModBuff : ModTexturedType
 	{
-		/// <summary>
-		/// The buff id of this buff.
-		/// </summary>
-		public int Type {get;internal set;}
+		/// <summary> The buff id of this buff. </summary>
+		public int Type { get; internal set; }
 
-		/// <summary>
-		/// The translations of this buff's display name.
-		/// </summary>
-		public ModTranslation DisplayName {get;internal set;}
+		/// <summary> The translations of this buff's display name. </summary>
+		public ModTranslation DisplayName { get; internal set; }
 
-		/// <summary>
-		/// The translations of this buff's description.
-		/// </summary>
-		public ModTranslation Description {get;internal set;}
+		/// <summary> The translations of this buff's description. </summary>
+		public ModTranslation Description { get; internal set; }
 
-		/// <summary>If this buff is a debuff, setting this to true will make this buff last twice as long on players in expert mode. Defaults to false.</summary>
-		public bool longerExpertDebuff = false;
-		/// <summary>Whether or not it is always safe to call Player.DelBuff on this buff. Setting this to false will prevent the nurse from being able to remove this debuff. Defaults to true.</summary>
-		public bool canBeCleared = true;
+		/// <summary> If this buff is a debuff, setting this to true will make this buff last twice as long on players in expert mode. Defaults to false. </summary>
+		public bool LongerExpertDebuff { get; set; }
+
+		/// <summary> Whether or not it is always safe to call Player.DelBuff on this buff. Setting this to false will prevent the nurse from being able to remove this debuff. Defaults to true. </summary>
+		public bool CanBeCleared { get; set; } = true;
 
 		protected override sealed void Register() {
 			ModTypeLookup<ModBuff>.Register(this);
 
 			Type = BuffLoader.ReserveBuffID();
-			DisplayName = Mod.GetOrCreateTranslation($"Mods.{Mod.Name}.BuffName.{Name}");
-			Description = Mod.GetOrCreateTranslation($"Mods.{Mod.Name}.BuffDescription.{Name}");
+			DisplayName = LocalizationLoader.GetOrCreateTranslation(Mod, $"BuffName.{Name}");
+			Description = LocalizationLoader.GetOrCreateTranslation(Mod, $"BuffDescription.{Name}");
 
 			BuffLoader.buffs.Add(this);
 		}
 
-		public override void SetupContent() {
-			TextureAssets.Buff[Type] = ModContent.GetTexture(Texture);
+		public sealed override void SetupContent() {
+			TextureAssets.Buff[Type] = ModContent.Request<Texture2D>(Texture);
 			SetDefaults();
 			BuffID.Search.Add(FullName, Type);
 		}

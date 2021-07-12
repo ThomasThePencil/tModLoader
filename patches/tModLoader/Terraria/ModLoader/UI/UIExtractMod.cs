@@ -86,22 +86,24 @@ namespace Terraria.ModLoader.UI
 					Directory.CreateDirectory(Path.GetDirectoryName(path));
 
 					using (var dst = File.OpenWrite(path))
-					using (var src = mod.modFile.GetStream(entry)) if (converter != null)
+					using (var src = mod.modFile.GetStream(entry)) {
+						if (converter != null)
 							converter(src, dst);
 						else
 							src.CopyTo(dst);
+					}
 
 					// Copy the dll to ModLoader\references\mods for easy collaboration.
 					if (name == "All.dll" || PlatformUtilities.IsXNA ? name == "Windows.dll" || name == $"{mod.Name}.XNA.dll" : name == "Mono.dll" || name == $"{mod.Name}.FNA.dll") {
 						string modReferencesPath = Path.Combine(Program.SavePath, "references", "mods");
 						Directory.CreateDirectory(modReferencesPath);
-						File.Copy(path, Path.Combine(modReferencesPath, $"{mod.Name}_v{mod.modFile.version}.dll"), true);
+						File.Copy(path, Path.Combine(modReferencesPath, $"{mod.Name}_v{mod.modFile.Version}.dll"), true);
 						log?.WriteLine("You can find this mod's .dll files under ModLoader\\references\\mods for easy mod collaboration!");
 					}
 					if (name == $"{mod.Name}.xml" && !mod.properties.hideCode) {
 						string modReferencesPath = Path.Combine(Program.SavePath, "references", "mods");
 						Directory.CreateDirectory(modReferencesPath);
-						File.Copy(path, Path.Combine(modReferencesPath, $"{mod.Name}_v{mod.modFile.version}.xml"), true);
+						File.Copy(path, Path.Combine(modReferencesPath, $"{mod.Name}_v{mod.modFile.Version}.xml"), true);
 						log?.WriteLine("You can find this mod's documentation .xml file under ModLoader\\references\\mods for easy mod collaboration!");
 					}
 				};

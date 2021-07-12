@@ -1,6 +1,6 @@
 --- src/Terraria/Terraria/GameInput/PlayerInput.cs
 +++ src/tModLoader/Terraria/GameInput/PlayerInput.cs
-@@ -8,6 +_,7 @@
+@@ -8,13 +_,14 @@
  using Terraria.GameContent.UI.Chat;
  using Terraria.GameContent.UI.States;
  using Terraria.ID;
@@ -8,6 +8,14 @@
  using Terraria.Social;
  using Terraria.UI;
  using Terraria.UI.Gamepad;
+ 
+ namespace Terraria.GameInput
+ {
+-	public class PlayerInput
++	public partial class PlayerInput
+ 	{
+ 		public class MiscSettingsTEMP
+ 		{
 @@ -26,6 +_,9 @@
  		public static List<string> KnownTriggers = new List<string> {
  			"MouseLeft",
@@ -18,11 +26,38 @@
  			"Up",
  			"Down",
  			"Left",
+@@ -264,7 +_,7 @@
+ 			if (_fastUseItemInventorySlot >= 0 && _fastUseItemInventorySlot != -2) {
+ 				Player localPlayer = Main.LocalPlayer;
+ 				if (localPlayer.inventory[_fastUseItemInventorySlot].IsAir)
+-					Utils.Swap(ref Main.mouseItem, ref localPlayer.inventory[_fastUseItemInventorySlot]);
++					Utils.Swap(ref Main.mouseItem, ref ((Item[])localPlayer.inventory)[_fastUseItemInventorySlot]);
+ 			}
+ 
+ 			_fastUseItemInventorySlot = -1;
+@@ -277,7 +_,7 @@
+ 			if (Main.mouseItem.stack <= 0) {
+ 				int uIPointForBuildingMode = _UIPointForBuildingMode;
+ 				if (uIPointForBuildingMode < 50 && uIPointForBuildingMode >= 0 && Main.player[Main.myPlayer].inventory[uIPointForBuildingMode].stack > 0)
+-					Utils.Swap(ref Main.mouseItem, ref Main.player[Main.myPlayer].inventory[uIPointForBuildingMode]);
++					Utils.Swap(ref Main.mouseItem, ref ((Item[])Main.player[Main.myPlayer].inventory)[uIPointForBuildingMode]);
+ 			}
+ 		}
+ 
+@@ -288,7 +_,7 @@
+ 			if (Main.mouseItem.stack > 0 && Main.player[Main.myPlayer].itemAnimation == 0) {
+ 				int uIPointForBuildingMode = _UIPointForBuildingMode;
+ 				if (uIPointForBuildingMode < 50 && uIPointForBuildingMode >= 0 && Main.player[Main.myPlayer].inventory[uIPointForBuildingMode].stack <= 0)
+-					Utils.Swap(ref Main.mouseItem, ref Main.player[Main.myPlayer].inventory[uIPointForBuildingMode]);
++					Utils.Swap(ref Main.mouseItem, ref ((Item[])Main.player[Main.myPlayer].inventory)[uIPointForBuildingMode]);
+ 			}
+ 
+ 			_UIPointForBuildingMode = -1;
 @@ -316,9 +_,21 @@
  			}
  		}
  
-+		// To allow mod hotkeys to load, need to reinitialize after load.
++		// To allow mod keybinds to load, need to reinitialize after load.
 +		internal static bool reinitialize;
 +		private static void ReInitialize() {
 +			Profiles.Clear();
@@ -80,7 +115,7 @@
  			bool flag4 = ItemID.Sets.GamepadWholeScreenUseRange[player.inventory[player.selectedItem].type] || player.scope;
  			int num3 = player.inventory[player.selectedItem].tileBoost + ItemID.Sets.GamepadExtraRange[player.inventory[player.selectedItem].type];
  			if (player.yoyoString && ItemID.Sets.Yoyo[player.inventory[player.selectedItem].type])
-@@ -994,6 +_,9 @@
+@@ -996,6 +_,9 @@
  			List<string> list = new List<string> {
  				"MouseLeft",
  				"MouseRight",
@@ -90,16 +125,16 @@
  				"Inventory"
  			};
  
-@@ -1175,7 +_,7 @@
+@@ -1177,7 +_,7 @@
  					if (DpadSnapCooldown[i] == 0) {
  						int num = 6;
  						if (ItemSlot.IsABuildingItem(player.inventory[player.selectedItem]))
 -							num = player.inventory[player.selectedItem].useTime;
-+							num = PlayerHooks.TotalUseTime(player.inventory[player.selectedItem].useTime, player, player.inventory[player.selectedItem]);
++							num = CombinedHooks.TotalUseTime(player.inventory[player.selectedItem].useTime, player, player.inventory[player.selectedItem]);
  
  						DpadSnapCooldown[i] = num;
  						zero += vector;
-@@ -1417,6 +_,9 @@
+@@ -1419,6 +_,9 @@
  						case InputMode.Keyboard:
  							c.KeyStatus["MouseLeft"].Add("Mouse1");
  							c.KeyStatus["MouseRight"].Add("Mouse2");
@@ -109,7 +144,7 @@
  							c.KeyStatus["Up"].Add("W");
  							c.KeyStatus["Down"].Add("S");
  							c.KeyStatus["Left"].Add("A");
-@@ -1454,6 +_,9 @@
+@@ -1456,6 +_,9 @@
  							c.KeyStatus["MouseLeft"].Add("Mouse1");
  							c.KeyStatus["MouseLeft"].Add("Space");
  							c.KeyStatus["MouseRight"].Add("Mouse2");
@@ -119,7 +154,7 @@
  							c.KeyStatus["Up"].Add("W");
  							c.KeyStatus["Up"].Add("Up");
  							c.KeyStatus["Down"].Add("S");
-@@ -1525,6 +_,9 @@
+@@ -1527,6 +_,9 @@
  						case InputMode.Keyboard:
  							c.KeyStatus["MouseLeft"].Add("Mouse1");
  							c.KeyStatus["MouseRight"].Add("Mouse2");
@@ -129,7 +164,7 @@
  							c.KeyStatus["Up"].Add("W");
  							c.KeyStatus["Down"].Add("S");
  							c.KeyStatus["Left"].Add("A");
-@@ -1562,6 +_,9 @@
+@@ -1564,6 +_,9 @@
  							c.KeyStatus["MouseLeft"].Add("Mouse1");
  							c.KeyStatus["MouseLeft"].Add("Space");
  							c.KeyStatus["MouseRight"].Add("Mouse2");
@@ -139,7 +174,7 @@
  							c.KeyStatus["Up"].Add("W");
  							c.KeyStatus["Up"].Add("Up");
  							c.KeyStatus["Down"].Add("S");
-@@ -1632,6 +_,9 @@
+@@ -1634,6 +_,9 @@
  						case InputMode.Keyboard:
  							c.KeyStatus["MouseLeft"].Add("Mouse1");
  							c.KeyStatus["MouseRight"].Add("Mouse2");
@@ -149,7 +184,7 @@
  							c.KeyStatus["Up"].Add("W");
  							c.KeyStatus["Down"].Add("S");
  							c.KeyStatus["Left"].Add("A");
-@@ -1669,6 +_,9 @@
+@@ -1671,6 +_,9 @@
  							c.KeyStatus["MouseLeft"].Add("Mouse1");
  							c.KeyStatus["MouseLeft"].Add("Space");
  							c.KeyStatus["MouseRight"].Add("Mouse2");
@@ -159,7 +194,7 @@
  							c.KeyStatus["Up"].Add("W");
  							c.KeyStatus["Up"].Add("Up");
  							c.KeyStatus["Down"].Add("S");
-@@ -1739,6 +_,9 @@
+@@ -1741,6 +_,9 @@
  						case InputMode.Keyboard:
  							c.KeyStatus["MouseLeft"].Add("Mouse1");
  							c.KeyStatus["MouseRight"].Add("Mouse2");
@@ -169,7 +204,7 @@
  							c.KeyStatus["Up"].Add("W");
  							c.KeyStatus["Down"].Add("S");
  							c.KeyStatus["Left"].Add("A");
-@@ -1776,6 +_,9 @@
+@@ -1778,6 +_,9 @@
  							c.KeyStatus["MouseLeft"].Add("Mouse1");
  							c.KeyStatus["MouseLeft"].Add("Space");
  							c.KeyStatus["MouseRight"].Add("Mouse2");

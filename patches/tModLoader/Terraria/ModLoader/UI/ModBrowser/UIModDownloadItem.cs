@@ -4,15 +4,14 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Reflection;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Newtonsoft.Json.Linq;
 using ReLogic.Content;
+using ReLogic.Utilities;
 using Terraria.Audio;
 using Terraria.GameContent;
 using Terraria.GameContent.UI.Elements;
-using Terraria.Graphics;
 using Terraria.ID;
 using Terraria.Localization;
 using Terraria.ModLoader.Core;
@@ -189,9 +188,9 @@ namespace Terraria.ModLoader.UI.ModBrowser
 			if (installed != null) {
 				//exists = true;
 				var cVersion = new Version(version.Substring(1));
-				if (cVersion > installed.modFile.version)
+				if (cVersion > installed.modFile.Version)
 					update = true;
-				else if (cVersion < installed.modFile.version)
+				else if (cVersion < installed.modFile.Version)
 					update = updateIsDowngrade = true;
 			}
 
@@ -329,9 +328,8 @@ namespace Terraria.ModLoader.UI.ModBrowser
 			try {
 				if (!e.Cancelled && e.Error == null) {
 					byte[] data = e.Result;
-
 					using (var buffer = new MemoryStream(data)) {
-						var iconTexture = ModLoader.ManifestAssets.CreateAsset($"{ModName}/icon.png", Texture2D.FromStream(Main.instance.GraphicsDevice, buffer));
+						var iconTexture = Main.Assets.CreateUntracked<Texture2D>(buffer, ".png");
 
 						_modIcon = new UIImage(iconTexture) {
 							Left = { Percent = 0f },

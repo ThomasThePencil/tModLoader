@@ -10,6 +10,7 @@ using Terraria.ModLoader.Core;
 using Terraria.ModLoader.UI;
 using Terraria.ModLoader.UI.DownloadManager;
 using Terraria.ModLoader.UI.ModBrowser;
+using Terraria.GameContent.UI.States;
 
 namespace Terraria.ModLoader.UI
 {
@@ -35,14 +36,13 @@ namespace Terraria.ModLoader.UI
 		internal const int enterSteamIDMenuID = 10018;
 		internal const int extractModID = 10019;
 		internal const int downloadProgressID = 10020;
-		internal const int developerModeHelpID = 10022;
 		internal const int progressID = 10023;
 		internal const int modConfigID = 10024;
 		internal const int createModID = 10025;
 		internal const int exitID = 10026;
 		internal static UIMods modsMenu = new UIMods();
 		internal static UILoadMods loadMods = new UILoadMods();
-		private static UIModSources modSources = new UIModSources();
+		internal static UIModSources modSources = new UIModSources();
 		internal static UIBuildMod buildMod = new UIBuildMod();
 		internal static UIErrorMessage errorMessage = new UIErrorMessage();
 		internal static UIModBrowser modBrowser = new UIModBrowser();
@@ -54,44 +54,15 @@ namespace Terraria.ModLoader.UI
 		internal static UIModPacks modPacksMenu = new UIModPacks();
 		internal static UIEnterSteamIDMenu enterSteamIDMenu = new UIEnterSteamIDMenu();
 		internal static UIExtractMod extractMod = new UIExtractMod();
-		internal static UIDeveloperModeHelp developerModeHelp = new UIDeveloperModeHelp();
 		internal static UIModConfig modConfig = new UIModConfig();
 		internal static UIModConfigList modConfigList = new UIModConfigList();
 		internal static UICreateMod createMod = new UICreateMod();
 		internal static UIProgress progress = new UIProgress();
 		internal static UIDownloadProgress downloadProgress = new UIDownloadProgress();
 
-		//add to Terraria.Main.DrawMenu in Main.menuMode == 0 after achievements
+		// adds to Terraria.Main.DrawMenu in Main.menuMode == 0, after achievements
 		//Interface.AddMenuButtons(this, this.selectedMenu, array9, array7, ref num, ref num3, ref num10, ref num5);
 		internal static void AddMenuButtons(Main main, int selectedMenu, string[] buttonNames, float[] buttonScales, ref int offY, ref int spacing, ref int buttonIndex, ref int numButtons) {
-			buttonNames[buttonIndex] = Language.GetTextValue("tModLoader.MenuMods");
-			if (selectedMenu == buttonIndex) {
-				SoundEngine.PlaySound(10, -1, -1, 1);
-				Main.menuMode = modsMenuID;
-			}
-			buttonIndex++;
-			numButtons++;
-			if (ModCompile.DeveloperMode) {
-				buttonNames[buttonIndex] = Language.GetTextValue("tModLoader.MenuModSources");
-				if (selectedMenu == buttonIndex) {
-					SoundEngine.PlaySound(10, -1, -1, 1);
-					Main.menuMode = ModCompile.DeveloperModeReady(out var _) ? modSourcesID : developerModeHelpID;
-				}
-				buttonIndex++;
-				numButtons++;
-			}
-			buttonNames[buttonIndex] = Language.GetTextValue("tModLoader.MenuModBrowser");
-			if (selectedMenu == buttonIndex) {
-				SoundEngine.PlaySound(10, -1, -1, 1);
-				Main.menuMode = modBrowserID;
-			}
-			buttonIndex++;
-			numButtons++;
-			offY = 220;
-			for (int k = 0; k < numButtons; k++) {
-				buttonScales[k] = 0.82f;
-			}
-			spacing = 45;
 		}
 
 		internal static void ResetData() {
@@ -117,6 +88,8 @@ namespace Terraria.ModLoader.UI
 		//	virticalSpacing[numButtons - 1] = 8;
 		//}
 
+		private static bool betaWelcomed = false;
+
 		//add to end of if else chain of Main.menuMode in Terraria.Main.DrawMenu
 		//Interface.ModLoaderMenus(this, this.selectedMenu, array9, array7, array4, ref num2, ref num4, ref num5, ref flag5);
 		internal static void ModLoaderMenus(Main main, int selectedMenu, string[] buttonNames, float[] buttonScales, int[] buttonVerticalSpacing, ref int offY, ref int spacing, ref int numButtons, ref bool backButtonDown) {
@@ -130,6 +103,14 @@ namespace Terraria.ModLoader.UI
 				//	ModLoader.ShowWhatsNew = false;
 				//	infoMessage.Show(Language.GetTextValue("tModLoader.WhatsNewMessage"), Main.menuMode);
 				//}
+
+#if RELEASE
+				// Temporary display for the alpha/beta version.
+				if (!betaWelcomed) {
+					betaWelcomed = true;
+					infoMessage.Show(Language.GetTextValue("tModLoader.WelcomeMessageBeta"), Main.menuMode);
+				}
+#endif
 			}
 			if (Main.menuMode == modsMenuID) {
 				Main.MenuUI.SetState(modsMenu);
@@ -141,10 +122,6 @@ namespace Terraria.ModLoader.UI
 			}
 			else if (Main.menuMode == createModID) {
 				Main.MenuUI.SetState(createMod);
-				Main.menuMode = 888;
-			}
-			else if (Main.menuMode == developerModeHelpID) {
-				Main.MenuUI.SetState(developerModeHelp);
 				Main.menuMode = 888;
 			}
 			else if (Main.menuMode == loadModsID) {
@@ -293,8 +270,11 @@ namespace Terraria.ModLoader.UI
 			}
 		}
 
-		internal static void ServerModMenu() {
+		internal static void ServerModMenu(out bool reloadMods) {
 			bool exit = false;
+
+			reloadMods = false;
+
 			while (!exit) {
 				Console.WriteLine("Terraria Server " + Main.versionNumber2 + " - " + ModLoader.versionedName);
 				Console.WriteLine();
@@ -305,15 +285,15 @@ namespace Terraria.ModLoader.UI
 				}
 				if (mods.Length == 0) {
 					Console.ForegroundColor = ConsoleColor.Yellow;
-					Console.WriteLine($"No mods were found in: \"{ModLoader.ModPath}\"\nIf you are running a dedicated server, you may wish to use the 'modpath' command line switch or server config setting to specify a custom mods directory.\n");
+					Console.WriteLine(Language.GetTextValue("tModLoader.ModsNotFoundServer", ModLoader.ModPath));
 					Console.ResetColor();
 				}
-				Console.WriteLine("e\t\tEnable All");
-				Console.WriteLine("d\t\tDisable All");
-				Console.WriteLine("r\t\tReload and return to world menu");
-				Console.WriteLine("Type a number to switch between enabled/disabled");
+				Console.WriteLine("e\t\t" + Language.GetTextValue("tModLoader.ModsEnableAll"));
+				Console.WriteLine("d\t\t" + Language.GetTextValue("tModLoader.ModsDisableAll"));
+				Console.WriteLine("r\t\t" + Language.GetTextValue("tModLoader.ModsReloadAndReturn"));
+				Console.WriteLine(Language.GetTextValue("tModLoader.AskForModIndex"));
 				Console.WriteLine();
-				Console.WriteLine("Type a command: ");
+				Console.WriteLine(Language.GetTextValue("tModLoader.AskForCommand"));
 				string command = Console.ReadLine();
 				if (command == null) {
 					command = "";
@@ -331,7 +311,8 @@ namespace Terraria.ModLoader.UI
 					}
 				}
 				else if (command == "r") {
-					ModLoader.Reload();
+					//Do not reload mods here, just to ensure that Main.DedServ_PostModLoad isn't in the call stack during mod reload, to allow hooking into it.
+					reloadMods = true;
 					exit = true;
 				}
 				else if (int.TryParse(command, out int value) && value > 0 && value <= mods.Length) {
@@ -345,9 +326,9 @@ namespace Terraria.ModLoader.UI
 			Console.Clear();
 			while (!exit) {
 				Console.WriteLine();
-				Console.WriteLine("b\t\tReturn to world menu");
+				Console.WriteLine("b\t\t" + Language.GetTextValue("tModLoader.MBServerReturnToMenu"));
 				Console.WriteLine();
-				Console.WriteLine("Type an exact ModName to download: ");
+				Console.WriteLine(Language.GetTextValue("tModLoader.MBServerAskForModName"));
 				string command = Console.ReadLine();
 				if (command == null) {
 					command = "";
@@ -379,7 +360,7 @@ namespace Terraria.ModLoader.UI
 						}
 					}
 					catch (Exception e) {
-						Console.WriteLine("Error: Could not download " + modname + " -- " + e.ToString());
+						Console.WriteLine(Language.GetTextValue("tModLoader.MBServerDownloadError", modname, e.ToString()));
 					}
 				}
 			}
@@ -388,13 +369,37 @@ namespace Terraria.ModLoader.UI
 
 		internal static void MessageBoxShow(string text, string caption = null) {
 			// MessageBox.Show fails on Mac, this method will open a text file to show a message.
-			caption ??= "Terraria: Error" + $" ({ModLoader.versionedName})";
+			caption = caption ?? "Terraria: Error" + $" ({ModLoader.versionedName})";
+			string message = Language.GetTextValue("tModLoader.ClientLogHint", text, Path.Combine(Main.SavePath, "Logs"));
+			if(Language.ActiveCulture == null) // Simple backup approach in case error happens before localization is loaded
+				message = string.Format("{0}\n\nA client.log file containing error information has been generated in\n{1}\n(You will need to share this file if asking for help)", text, Path.Combine(Main.SavePath, "Logs"));
 #if !MAC
-			System.Windows.Forms.MessageBox.Show(text, caption);
+			System.Windows.Forms.MessageBox.Show(message, caption);
 #else
 			File.WriteAllText("fake-messagebox.txt", $"{caption}\n\n{text}");
 			Process.Start("fake-messagebox.txt");
 #endif
+		}
+
+		internal static void MessageBoxShow(Exception e, string caption = null, bool generateTip = false) {
+			string tip = "";
+
+			if (generateTip) {
+				if (e is OutOfMemoryException)
+					tip = Language.GetTextValue("tModLoader.OutOfMemoryHint");
+				else if (e is InvalidOperationException || e is NullReferenceException || e is IndexOutOfRangeException || e is ArgumentNullException)
+					tip = Language.GetTextValue("tModLoader.ModExceptionHint");
+				else if (e is IOException && e.Message.Contains("cloud file provider"))
+					tip = Language.GetTextValue("tModLoader.OneDriveHint");
+				else if (e is System.Threading.SynchronizationLockException)
+					tip = Language.GetTextValue("tModLoader.AntivirusHint");
+				else if (e is TypeInitializationException)
+					tip = Language.GetTextValue("tModLoader.TypeInitializationHint");
+			}
+
+			string message = e.ToString() + tip;
+
+			MessageBoxShow(message, caption);
 		}
 	}
 }

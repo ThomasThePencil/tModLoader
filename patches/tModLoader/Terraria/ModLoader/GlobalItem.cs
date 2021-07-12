@@ -1,78 +1,39 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
+using Terraria.DataStructures;
 using Terraria.ModLoader.IO;
 using Terraria.Utilities;
+using Terraria.ID;
+using Terraria.ModLoader.Core;
 
 namespace Terraria.ModLoader
 {
 	/// <summary>
 	/// This class allows you to modify and use hooks for all items, including vanilla items. Create an instance of an overriding class then call Mod.AddGlobalItem to use this.
 	/// </summary>
-	public class GlobalItem:ModType
+	public abstract class GlobalItem : GlobalType<Item>
 	{
-		internal int index;
-		internal int instanceIndex;
-
 		protected sealed override void Register() {
 			ItemLoader.VerifyGlobalItem(this);
 
 			ModTypeLookup<GlobalItem>.Register(this);
 			
-			index = ItemLoader.globalItems.Count;
+			index = (ushort)ItemLoader.globalItems.Count;
 
 			ItemLoader.globalItems.Add(this);
 		}
 
-		/// <summary>
-		/// Whether to create a new GlobalItem instance for every Item that exists. 
-		/// Useful for storing information on an item. Defaults to false. 
-		/// Return true if you need to store information (have non-static fields).
-		/// </summary>
-		public virtual bool InstancePerEntity => false;
-
-		public GlobalItem Instance(Item item) => InstancePerEntity ? item.globalItems[instanceIndex] : this;
-
-		/// <summary>
-		/// Whether instances of this GlobalItem are created through Clone or constructor (by default implementations of NewInstance and Clone(Item, Item)). 
-		/// Defaults to false (using default constructor).
-		/// </summary>
-		public virtual bool CloneNewInstances => false;
-
-		/// <summary>
-		/// Returns a clone of this GlobalItem. 
-		/// By default this will return a memberwise clone; you will want to override this if your GlobalItem contains object references. 
-		/// Only called if CloneNewInstances && InstancePerEntity
-		/// </summary>
-		public virtual GlobalItem Clone() => (GlobalItem)MemberwiseClone();
+		public GlobalItem Instance(Item item) => Instance(item.globalItems, index);
 
 		/// <summary>
 		/// Create a copy of this instanced GlobalItem. Called when an item is cloned.
-		/// Defaults to NewInstance(item)
 		/// </summary>
 		/// <param name="item">The item being cloned</param>
 		/// <param name="itemClone">The new item</param>
-		public virtual GlobalItem Clone(Item item, Item itemClone) => NewInstance(item);
-
-		/// <summary>
-		/// Create a new instance of this GlobalItem for an Item instance. 
-		/// Called at the end of Item.SetDefaults.
-		/// If CloneNewInstances is true, just calls Clone()
-		/// Otherwise calls the default constructor and copies fields
-		/// </summary>
-		public virtual GlobalItem NewInstance(Item item) {
-			if (CloneNewInstances)
-				return Clone();
-
-			var copy = (GlobalItem)Activator.CreateInstance(GetType());
-			copy.Mod = Mod;
-			copy.index = index; //not necessary, but consistency
-			copy.instanceIndex = instanceIndex;//shouldn't be used, but someone might
-			return copy;
-		}
+		public virtual GlobalItem Clone(Item item, Item itemClone) => (GlobalItem)MemberwiseClone();
 
 		/// <summary>
 		/// Allows you to set the properties of any and every item that gets created.
@@ -80,6 +41,9 @@ namespace Terraria.ModLoader
 		public virtual void SetDefaults(Item item) {
 		}
 
+		public virtual void OnCreate(Item item, ItemCreationContext context) {
+		}
+		
 		/// <summary>
 		/// Allows you to manually choose what prefix an item will get.
 		/// </summary>
@@ -116,14 +80,18 @@ namespace Terraria.ModLoader
 		/// <summary>
 		/// Allows you to modify the location and rotation of any item in its use animation.
 		/// </summary>
-		public virtual void UseStyle(Item item, Player player) {
-		}
+		/// <param name="item"> The item. </param>
+		/// <param name="player"> The player. </param>
+		/// <param name="heldItemFrame"> The source rectangle for the held item's texture. </param>
+		public virtual void UseStyle(Item item, Player player, Rectangle heldItemFrame) { }
 
 		/// <summary>
 		/// Allows you to modify the location and rotation of the item the player is currently holding.
 		/// </summary>
-		public virtual void HoldStyle(Item item, Player player) {
-		}
+		/// <param name="item"> The item. </param>
+		/// <param name="player"> The player. </param>
+		/// <param name="heldItemFrame"> The source rectangle for the held item's texture. </param>
+		public virtual void HoldStyle(Item item, Player player, Rectangle heldItemFrame) { }
 
 		/// <summary>
 		/// Allows you to make things happen when the player is holding an item (for example, torches make light and water candles increase spawn rate).
@@ -133,19 +101,24 @@ namespace Terraria.ModLoader
 
 		/// <summary>
 		/// Allows you to change the effective useTime of an item.
+		/// <br/> Note that this hook may cause items' actions to run less or more times than they should per a single use.
 		/// </summary>
-		/// <returns>The multiplier on the usage speed. 1f by default. Values greater than 1 increase the item speed.</returns>
-		public virtual float UseTimeMultiplier(Item item, Player player) {
-			return 1f;
-		}
+		/// <returns> The multiplier on the usage time. 1f by default. Values greater than 1 increase the item use's length. </returns>
+		public virtual float UseTimeMultiplier(Item item, Player player) => 1f;
 
 		/// <summary>
 		/// Allows you to change the effective useAnimation of an item.
+		/// <br/> Note that this hook may cause items' actions to run less or more times than they should per a single use.
 		/// </summary>
-		/// <returns>The multiplier on the animation speed. 1f by default. Values greater than 1 increase the item speed.</returns>
-		public virtual float MeleeSpeedMultiplier(Item item, Player player) {
-			return 1f;
-		}
+		/// <returns>The multiplier on the animation time. 1f by default. Values greater than 1 increase the item animation's length. </returns>
+		public virtual float UseAnimationMultiplier(Item item, Player player) => 1f;
+
+		/// <summary>
+		/// Allows you to safely change both useTime and useAnimation while keeping the values relative to each other.
+		/// <br/> Useful for status effects.
+		/// </summary>
+		/// <returns> The multiplier on the use speed. 1f by default. Values greater than 1 increase the overall item speed. </returns>
+		public virtual float UseSpeedMultiplier(Item item, Player player) => 1f;
 
 		/// <summary>
 		/// Allows you to temporarily modify the amount of life a life healing item will heal for, based on player buffs, accessories, etc. This is only called for items with a healLife value.
@@ -202,37 +175,36 @@ namespace Terraria.ModLoader
 		/// </summary>
 		/// <param name="item">The item being used</param>
 		/// <param name="player">The player using the item</param>
-		/// <param name="add">Used for additively stacking buffs (most common). Only ever use += on this field. Things with effects like "5% increased MyDamageClass damage" would use this: `add += 0.05`</param>
+		/// <param name="add">Used for additively stacking buffs (most common). Only ever use += on this field. Things with effects like "5% increased MyDamageClass damage" would use this: `add += 0.05f`</param>
 		/// <param name="mult">Use to directly multiply the player's effective damage. Good for debuffs, or things which should stack separately (eg ammo type buffs)</param>
 		/// <param name="flat">This is a flat damage bonus that will be added after add and mult are applied. It facilitates effects like "4 more damage from weapons"</param>
-		public virtual void ModifyWeaponDamage(Item item, Player player, ref float add, ref float mult, ref float flat) {
+		public virtual void ModifyWeaponDamage(Item item, Player player, ref StatModifier damage, ref float flat) {
+		}
+
+		/// <summary>
+		/// Allows you to set an item's sorting group in Journey Mode's duplication menu. This is useful for setting custom item types that group well together, or whenever the default vanilla sorting doesn't sort the way you want it.
+		/// </summary>
+		/// <param name="item">The item being used</param>
+		/// <param name="itemGroup">The item group this item is being assigned to</param>
+		public virtual void ModifyResearchSorting(Item item, ref ContentSamples.CreativeHelper.ItemGroup itemGroup) {
 		}
 
 		/// <summary>
 		/// Allows you to temporarily modify this weapon's knockback based on player buffs, etc. This allows you to customize knockback beyond the Player class's limited fields.
-		/// Note that tModLoader follows vanilla principle of only allowing one effective damage class at a time.
-		/// This means that if you want your own custom damage class, all vanilla damage classes must be set to false.
-		/// Vanilla checks classes in this order: melee, ranged, magic, thrown, summon
-		/// So if you set both melee class and another class to true, only the melee knockback will actually be used.
 		/// </summary>
 		/// <param name="item">The item being used</param>
 		/// <param name="player">The player using the item</param>
 		/// <param name="knockback">The knockback</param>
-		public virtual void GetWeaponKnockback(Item item, Player player, ref float knockback) {
+		public virtual void ModifyWeaponKnockback(Item item, Player player, ref StatModifier knockback, ref float flat) {
 		}
 
 		/// <summary>
 		/// Allows you to temporarily modify this weapon's crit chance based on player buffs, etc.
-		/// Note that tModLoader follows vanilla principle of only allowing one effective damage class at a time.
-		/// This means that if you want your own custom damage class, all vanilla damage classes must be set to false.
-		/// If you use a custom damage class, the crit value will equal item.crit
-		/// Vanilla checks classes in this order: melee, ranged, magic, thrown, and summon cannot crit.
-		/// So if you set both melee class and another class to true, only the melee crit will actually be used.
 		/// </summary>
 		/// <param name="item">The item being used</param>
 		/// <param name="player">The player using the item</param>
 		/// <param name="crit">The critical strike chance</param>
-		public virtual void GetWeaponCrit(Item item, Player player, ref int crit) {
+		public virtual void ModifyWeaponCrit(Item item, Player player, ref int crit) {
 		}
 
 		/// <summary>
@@ -264,18 +236,40 @@ namespace Terraria.ModLoader
 		}
 
 		/// <summary>
-		/// This is called before the weapon creates a projectile. You can use it to create special effects, such as changing the speed, changing the initial position, and/or firing multiple projectiles. Return false to stop the game from shooting the default projectile (do this if you manually spawn your own projectile). Returns true by default.
+		/// Allows you to prevent an item from shooting a projectile on use. Returns true by default.
 		/// </summary>
-		/// <param name="item">The weapon item.</param>
-		/// <param name="player">The player.</param>
-		/// <param name="position">The shoot spawn position.</param>
-		/// <param name="speedX">The speed x calculated from shootSpeed and mouse position.</param>
-		/// <param name="speedY">The speed y calculated from shootSpeed and mouse position.</param>
-		/// <param name="type">The projectile type chosen by ammo and weapon.</param>
-		/// <param name="damage">The projectile damage.</param>
-		/// <param name="knockBack">The projectile knock back.</param>
+		/// <param name="item"> The item being used. </param>
+		/// <param name="player"> The player using the item. </param>
 		/// <returns></returns>
-		public virtual bool Shoot(Item item, Player player, ref Vector2 position, ref float speedX, ref float speedY, ref int type, ref int damage, ref float knockBack) {
+		public virtual bool CanShoot(Item item, Player player) {
+			return true;
+		}
+
+		/// <summary>
+		/// Allows you to modify the position, velocity, type, damage and/or knockback of a projectile being shot by an item.
+		/// </summary>
+		/// <param name="item"> The item being used. </param>
+		/// <param name="player"> The player using the item. </param>
+		/// <param name="position"> The center position of the projectile. </param>
+		/// <param name="velocity"> The velocity of the projectile. </param>
+		/// <param name="type"> The ID of the projectile. </param>
+		/// <param name="damage"> The damage of the projectile. </param>
+		/// <param name="knockback"> The knockback of the projectile. </param>
+		public virtual void ModifyShootStats(Item item, Player player, ref Vector2 position, ref Vector2 velocity, ref int type, ref int damage, ref float knockback) {
+		}
+
+		/// <summary>
+		/// Allows you to modify an item's shooting mechanism. Return false to prevent vanilla's shooting code from running. Returns true by default.
+		/// </summary>
+		/// <param name="item"> The item being used. </param>
+		/// <param name="player"> The player using the item. </param>
+		/// <param name="source"> The projectile source's information. </param>
+		/// <param name="position"> The center position of the projectile. </param>
+		/// <param name="velocity"> The velocity of the projectile. </param>
+		/// <param name="type"> The ID of the projectile. </param>
+		/// <param name="damage"> The damage of the projectile. </param>
+		/// <param name="knockback"> The knockback of the projectile. </param>
+		public virtual bool Shoot(Item item, Player player, ProjectileSource_Item_WithAmmo source, Vector2 position, Vector2 velocity, int type, int damage, float knockback) {
 			return true;
 		}
 
@@ -330,11 +324,17 @@ namespace Terraria.ModLoader
 		}
 
 		/// <summary>
-		/// Allows you to make things happen when an item is used. Return true if using the item actually does stuff. Returns false by default.
+		/// Allows you to make things happen when an item is used. The return value controls whether or not ApplyItemTime will be called for the player.
+		/// <br/> Return true if the item actually did something, to force itemTime.
+		/// <br/> Return false to keep itemTime at 0.
+		/// <br/> Return null for vanilla behavior.
 		/// </summary>
-		public virtual bool UseItem(Item item, Player player) {
-			return false;
-		}
+		public virtual bool? UseItem(Item item, Player player) => null;
+
+		/// <summary>
+		/// Allows you to make things happen when an item's use animation starts.
+		/// </summary>
+		public virtual void UseAnimation(Item item, Player player) { }
 
 		/// <summary>
 		/// If the item is consumable and this returns true, then the item will be consumed upon usage. Returns true by default.
@@ -352,18 +352,14 @@ namespace Terraria.ModLoader
 		}
 
 		/// <summary>
-		/// Allows you to modify the player's animation when an item is being used. Return true if you modify the player's animation. Returns false by default.
+		/// Allows you to modify the player's animation when an item is being used.
 		/// </summary>
-		public virtual bool UseItemFrame(Item item, Player player) {
-			return false;
-		}
+		public virtual void UseItemFrame(Item item, Player player) { }
 
 		/// <summary>
-		/// Allows you to modify the player's animation when the player is holding an item. Return true if you modify the player's animation. Returns false by default.
+		/// Allows you to modify the player's animation when the player is holding an item.
 		/// </summary>
-		public virtual bool HoldItemFrame(Item item, Player player) {
-			return false;
-		}
+		public virtual void HoldItemFrame(Item item, Player player) { }
 
 		/// <summary>
 		/// Allows you to make an item usable by right-clicking. Returns false by default. When the item is used by right-clicking, player.altFunctionUse will be set to 2.
@@ -388,6 +384,12 @@ namespace Terraria.ModLoader
 		/// Allows you to give effects to accessories. The hideVisual parameter is whether the player has marked the accessory slot to be hidden from being drawn on the player.
 		/// </summary>
 		public virtual void UpdateAccessory(Item item, Player player, bool hideVisual) {
+		}
+
+		/// <summary>
+		/// Allows you to give effects to this accessory when equipped in a vanity slot. Vanilla uses this for boot effects, wings and merman/werewolf visual flags
+		/// </summary>
+		public virtual void UpdateVanity(Item item, Player player) {
 		}
 
 		/// <summary>
@@ -513,6 +515,17 @@ namespace Terraria.ModLoader
 		}
 
 		/// <summary>
+		/// Allows you to prevent vanilla items from stacking in the world.
+		/// This is only called when two items of the same type attempt to stack.
+		/// </summary>
+		/// <param name="item1">The item that is attempting to stack</param>
+		/// <param name="item2">The item that the other item is attempting to stack with</param>
+		/// <returns>Whether or not the items are allowed to stack</returns>
+		public virtual bool CanStackInWorld(Item item1, Item item2) {
+			return true;
+		}
+
+		/// <summary>
 		/// Returns if the normal reforge pricing is applied. 
 		/// If true or false is returned and the price is altered, the price will equal the altered price.
 		/// The passed reforge price equals the item.value. Vanilla pricing will apply 20% discount if applicable and then price the reforge at a third of that value.
@@ -540,7 +553,7 @@ namespace Terraria.ModLoader
 		/// <summary>
 		/// Allows you to determine whether the skin/shirt on the player's arms and hands are drawn when a body armor is worn.
 		/// Note that if drawHands is false, the arms will not be drawn either.
-		/// 
+		/// "body" is the player's associated body equipment texture.
 		/// This method is not instanced.
 		/// </summary>
 		public virtual void DrawHands(int body, ref bool drawHands, ref bool drawArms) {
@@ -548,7 +561,7 @@ namespace Terraria.ModLoader
 
 		/// <summary>
 		/// Allows you to determine whether the player's hair or alt (hat) hair will be drawn when a head armor is worn.
-		/// 
+		/// "head" is the player's associated head equipment texture.
 		/// This method is not instanced.
 		/// </summary>
 		public virtual void DrawHair(int head, ref bool drawHair, ref bool drawAltHair) {
@@ -556,7 +569,7 @@ namespace Terraria.ModLoader
 
 		/// <summary>
 		/// Return false to hide the player's head when a head armor is worn. Returns true by default.
-		/// 
+		/// "head" is the player's associated head equipment texture.
 		/// This method is not instanced.
 		/// </summary>
 		public virtual bool DrawHead(int head) {
@@ -565,7 +578,7 @@ namespace Terraria.ModLoader
 
 		/// <summary>
 		/// Return false to hide the player's body when a body armor is worn. Returns true by default.
-		/// 
+		/// "body" is the player's associated body equipment texture.
 		/// This method is not instanced.
 		/// </summary>
 		public virtual bool DrawBody(int body) {
@@ -574,7 +587,7 @@ namespace Terraria.ModLoader
 
 		/// <summary>
 		/// Return false to hide the player's legs when a leg armor or shoe accessory is worn. Returns true by default.
-		/// 
+		/// "legs" and "shoes" are the player's associated legs and shoes equipment textures.
 		/// This method is not instanced.
 		/// </summary>
 		public virtual bool DrawLegs(int legs, int shoes) {
@@ -630,10 +643,10 @@ namespace Terraria.ModLoader
 		}
 
 		/// <summary>
-		/// Returns whether or not this item burns when it is thrown into lava despite item.rare not being 0. Returns false by default.
+		/// Returns whether or not this item will burn in lava regardless of any conditions. Returns null by default (follow vanilla behaviour).
 		/// </summary>
-		public virtual bool CanBurnInLava(Item item) {
-			return false;
+		public virtual bool? CanBurnInLava(Item item) {
+			return null;
 		}
 
 		/// <summary>
@@ -783,12 +796,6 @@ namespace Terraria.ModLoader
 		/// This is essentially the same as Mod.AddRecipes or ModItem.AddRecipes. Use whichever method makes organizational sense for your mod.
 		/// </summary>
 		public virtual void AddRecipes() {
-		}
-
-		/// <summary>
-		/// Allows you to make anything happen when the player crafts the given item using the given recipe.
-		/// </summary>
-		public virtual void OnCraft(Item item, Recipe recipe) {
 		}
 
 		/// <summary>

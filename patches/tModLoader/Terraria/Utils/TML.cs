@@ -1,5 +1,8 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
+using System.IO;
 using Microsoft.Xna.Framework;
 using Terraria.DataStructures;
 using Terraria.Utilities;
@@ -69,6 +72,9 @@ namespace Terraria
 		public static bool NextBool(this UnifiedRandom r)
 			=> r.NextDouble() < .5;
 
+		public static T Min<T>(params T[] array)
+			=> array.Min();
+		
 		/// <summary> Returns true 1 out of X times. </summary>
 		public static bool NextBool(this UnifiedRandom r, int consequent)
 		{
@@ -88,5 +94,23 @@ namespace Terraria
 		}
 
 		public static int Repeat(int value, int length) => value >= 0 ? value % length : (value % length) + length;
+
+		/// <summary>
+		/// Bit packs a BitArray in to a Byte Array and then sends the byte array
+		/// </summary>
+		public static void SendBitArray(BitArray arr, BinaryWriter writer) {
+			byte[] result = new byte[(arr.Length - 1) / 8 + 1];
+			arr.CopyTo(result, 0);
+			writer.Write(result);
+		}
+
+		/// <summary>
+		/// Receives the result of SendBitArray, and returns the corresponding BitArray
+		/// </summary>
+		public static BitArray ReceiveBitArray(int BitArrLength, BinaryReader reader) {
+			byte[] receive = new byte[(BitArrLength - 1) / 8 + 1];
+			receive = reader.ReadBytes(receive.Length);
+			return new BitArray(receive);
+		}
 	}
 }

@@ -8,67 +8,26 @@ using ReLogic.Content.Sources;
 
 namespace Terraria.ModLoader.Assets
 {
-	public sealed class AssemblyResourcesContentSource : IContentSource, IDisposable
+	public sealed class AssemblyResourcesContentSource : ContentSource
 	{
-		private static readonly StringComparer StringComparer = StringComparer.CurrentCultureIgnoreCase;
-
-		public IContentValidator ContentValidator { get; set; }
 
 		private readonly string RootPath;
-		private readonly HashSet<string> ResourceNames;
-		private readonly RejectedAssetCollection Rejections;
-		private readonly Dictionary<string, string> PathRedirects;
+		private readonly Assembly assembly;
 
-		private Assembly assembly;
+		public AssemblyResourcesContentSource(Assembly assembly, string rootPath = null) {
+			this.assembly = assembly;
 
-		public AssemblyResourcesContentSource(Assembly assembly, string rootPath = null)
-		{
-			RootPath = rootPath;
-			Rejections = new RejectedAssetCollection();
-
-			var resourceNames = assembly.GetManifestResourceNames().ToList();
-
-			if (RootPath != null) {
-				PathRedirects = new Dictionary<string, string>();
-
-				for (int i = 0;i<resourceNames.Count;i++) {
-					string path = resourceNames[i];
-
-					if (path.StartsWith(rootPath)) {
-						string shortPath = path.Substring(rootPath.Length);
-
-						resourceNames[i] = shortPath;
-						PathRedirects[shortPath] = path;
-					} else {
-						resourceNames.RemoveAt(i--);
-					}
-				}
+			IEnumerable<string> resourceNames = assembly.GetManifestResourceNames();
+			if (rootPath != null) {
+				resourceNames = resourceNames
+					.Where(p => p.StartsWith(rootPath))
+					.Select(p => p.Substring(rootPath.Length));
 			}
 
-			ResourceNames = new HashSet<string>(resourceNames);
-
-			this.assembly = assembly;
+			RootPath = rootPath ?? "";
+			SetAssetNames(resourceNames);
 		}
 
-		//Assets
-		public bool HasAsset(string assetName) => ResourceNames.Any(s => StringComparer.Equals(s, assetName));
-		public string GetExtension(string assetName) => Path.GetExtension(assetName);
-		public Stream OpenStream(string assetName) => assembly.GetManifestResourceStream(PathRedirects != null ? PathRedirects[assetName] : assetName);
-		public IEnumerable<string> EnumerateFiles() => ResourceNames;
-		//Etc
-		public void Dispose()
-		{
-			assembly = null;
-
-			ResourceNames.Clear();
-			PathRedirects.Clear();
-
-			ClearRejections();
-		}
-
-		//Rejections
-		public void ClearRejections() => Rejections.Clear();
-		public void RejectAsset(string assetName, IRejectionReason reason) => Rejections.Reject(assetName, reason);
-		public bool TryGetRejections(List<string> rejectionReasons) => Rejections.TryGetRejections(rejectionReasons);
+		public override Stream OpenStream(string assetName) => assembly.GetManifestResourceStream(RootPath + assetName);
 	}
 }

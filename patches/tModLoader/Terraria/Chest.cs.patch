@@ -8,6 +8,24 @@
  
  namespace Terraria
  {
+@@ -24,7 +_,7 @@
+ 		public static int[] dresserItemSpawn = new int[40];
+ 		public const int maxItems = 40;
+ 		public const int MaxNameLength = 20;
+-		public Item[] item;
++		public Terraria.ModLoader.Container.TerrariaInventory item;
+ 		public int x;
+ 		public int y;
+ 		public bool bankChest;
+@@ -34,7 +_,7 @@
+ 		private static HashSet<int> _chestInUse = new HashSet<int>();
+ 
+ 		public Chest(bool bank = false) {
+-			item = new Item[40];
++			item = new ModLoader.Container.TerrariaInventory(40);
+ 			bankChest = bank;
+ 			name = string.Empty;
+ 		}
 @@ -192,11 +_,14 @@
  			return list;
  		}
@@ -76,17 +94,17 @@
  				}
  			}
  
-@@ -504,14 +_,16 @@
+@@ -504,14 +_,15 @@
  			}
  		}
  
 -		public void AddItemToShop(Item newItem) {
 +		public int AddItemToShop(Item newItem) { //tML: Now returns the item's index.
  			int num = Main.shopSellbackHelper.Remove(newItem);
-+			/*
++			
  			if (num >= newItem.stack)
- 				return;
-+			*/
+-				return;
++				return 0;
  
  			int num2 = 0;
  			while (true) {
@@ -108,7 +126,7 @@
  			item[num2].stack -= num;
  			_ = item[num2].value;
  			_ = 0;
-+			return num;
++			return num2;
  		}
  
  		public static void SetupTravelShop() {
@@ -125,7 +143,7 @@
  		}
  
  		public void SetupShop(int type) {
-@@ -2508,6 +_,7 @@
+@@ -2578,6 +_,7 @@
  					array[num++].SetDefaults(4921);
  			}
  

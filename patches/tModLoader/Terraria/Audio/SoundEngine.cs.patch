@@ -1,17 +1,6 @@
 --- src/Terraria/Terraria/Audio/SoundEngine.cs
 +++ src/tModLoader/Terraria/Audio/SoundEngine.cs
-@@ -9,8 +_,8 @@
- 	public static class SoundEngine
- 	{
- 		public static readonly object AudioLock = new object();
--		private static LegacySoundPlayer _legacyPlayer;
-+		internal static LegacySoundPlayer _legacyPlayer;
--		private static SoundPlayer _player;
-+		internal static SoundPlayer _player;
- 		private static bool _areSoundsPaused;
- 
- 		public static bool IsAudioSupported {
-@@ -50,13 +_,19 @@
+@@ -60,13 +_,16 @@
  			PlaySound(type, (int)position.X, (int)position.Y, style);
  		}
  
@@ -23,14 +12,11 @@
  			if (type == null)
  				return null;
  
-+			if (type is LegacySoundStyle legacySoundStyle)
 -			return PlaySound(type.SoundId, x, y, type.Style, type.Volume, type.GetRandomPitch());
-+				return PlaySound(legacySoundStyle.SoundId, x, y, legacySoundStyle.Style, type.Volume, type.GetRandomPitch());
++			if (x != -1 || y != -1)
++				return type.Play(new Vector2(x, y));
 +
-+			if (x == -1 && y == -1)
-+				return _player.GetActiveSound(PlayTrackedSound(type)).Sound;
-+
-+			return _player.GetActiveSound(PlayTrackedSound(type, new Vector2(x, y))).Sound;
++			return type.Play(null);
  		}
  
  		public static SoundEffectInstance PlaySound(int type, int x = -1, int y = -1, int Style = 1, float volumeScale = 1f, float pitchOffset = 0f) {

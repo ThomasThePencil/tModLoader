@@ -5,13 +5,13 @@ using Terraria.ModLoader.IO;
 
 namespace Terraria.ModLoader.Default
 {
-	public class UnloadedItem : ModItem
+	[LegacyName("MysteryItem")]
+	public class UnloadedItem : ModLoaderModItem
 	{
-		private string modName;
-		private string itemName;
 		private TagCompound data;
 
-		public override string Texture => "ModLoader/UnloadedItem";
+		public string ModName { get; private set; }
+		public string ItemName { get; private set; }
 
 		public override void SetStaticDefaults() {
 			DisplayName.SetDefault("{$tModLoader.UnloadedItemItemName}");
@@ -19,24 +19,24 @@ namespace Terraria.ModLoader.Default
 		}
 
 		public override void SetDefaults() {
-			item.width = 20;
-			item.height = 20;
-			item.rare = 1;
+			Item.width = 20;
+			Item.height = 20;
+			Item.rare = 1;
 		}
 
 		internal void Setup(TagCompound tag) {
-			modName = tag.GetString("mod");
-			itemName = tag.GetString("name");
+			ModName = tag.GetString("mod");
+			ItemName = tag.GetString("name");
 			data = tag;
 		}
 
 		public override void ModifyTooltips(List<TooltipLine> tooltips) {
 			for (int k = 0; k < tooltips.Count; k++) {
 				if (tooltips[k].Name == "Tooltip0") {
-					tooltips[k].text = Language.GetTextValue("tModLoader.UnloadedItemModTooltip", modName);
+					tooltips[k].text = Language.GetTextValue("tModLoader.UnloadedItemModTooltip", ModName);
 				}
 				else if (tooltips[k].Name == "Tooltip1") {
-					tooltips[k].text = Language.GetTextValue("tModLoader.UnloadedItemItemNameTooltip", itemName);
+					tooltips[k].text = Language.GetTextValue("tModLoader.UnloadedItemItemNameTooltip", ItemName);
 				}
 			}
 		}
@@ -47,10 +47,10 @@ namespace Terraria.ModLoader.Default
 
 		public override void Load(TagCompound tag) {
 			Setup(tag);
-			if (ModContent.TryFind(modName, itemName, out ModItem modItem)) {
-				item.SetDefaults(modItem.Type);
-				item.modItem.Load(tag.GetCompound("data"));
-				ItemIO.LoadGlobals(item, tag.GetList<TagCompound>("globalData"));
+			if (ModContent.TryFind(ModName, ItemName, out ModItem modItem)) {
+				Item.SetDefaults(modItem.Type);
+				Item.ModItem.Load(tag.GetCompound("data"));
+				ItemIO.LoadGlobals(Item, tag.GetList<TagCompound>("globalData"));
 			}
 		}
 
@@ -62,10 +62,8 @@ namespace Terraria.ModLoader.Default
 			Setup(TagIO.Read(reader));
 		}
 
-		public override bool CloneNewInstances => true;
-
-		public override ModItem Clone() {
-			var clone = (UnloadedItem)base.Clone();
+		public override ModItem Clone(Item item) {
+			var clone = (UnloadedItem)base.Clone(item);
 			clone.data = (TagCompound)data?.Clone();
 			return clone;
 		}

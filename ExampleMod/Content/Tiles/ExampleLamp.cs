@@ -2,12 +2,12 @@
 using Microsoft.Xna.Framework.Graphics;
 using ReLogic.Content;
 using Terraria;
+using Terraria.DataStructures;
 using Terraria.Enums;
 using Terraria.ID;
 using Terraria.Localization;
 using Terraria.ModLoader;
 using Terraria.ObjectData;
-using static Terraria.ModLoader.ModContent;
 
 namespace ExampleMod.Content.Tiles
 {
@@ -38,12 +38,12 @@ namespace ExampleMod.Content.Tiles
 
 			// Assets
 			if (!Main.dedServ) {
-				flameTexture = GetTexture("ExampleMod/Content/Tiles/ExampleLamp_Flame"); // We could also reuse Main.FlameTexture[] textures, but using our own texture is nice.
+				flameTexture = ModContent.Request<Texture2D>("ExampleMod/Content/Tiles/ExampleLamp_Flame"); // We could also reuse Main.FlameTexture[] textures, but using our own texture is nice.
 			}
 		}
 
 		public override void KillMultiTile(int i, int j, int frameX, int frameY) {
-			Item.NewItem(i * 16, j * 16, 16, 48, ItemType<Items.Placeable.ExampleLamp>());
+			Item.NewItem(i * 16, j * 16, 16, 48, ModContent.ItemType<Items.Placeable.ExampleLamp>());
 		}
 
 		public override void HitWire(int i, int j) {
@@ -81,7 +81,7 @@ namespace ExampleMod.Content.Tiles
 			}
 		}
 
-		public override void DrawEffects(int i, int j, SpriteBatch spriteBatch, ref Color drawColor, ref int nextSpecialDrawIndex) {
+		public override void DrawEffects(int i, int j, SpriteBatch spriteBatch, ref TileDrawInfo drawData) {
 			if (Main.gamePaused || !Main.instance.IsActive || Lighting.UpdateEveryFrame && !Main.rand.NextBool(4)) {
 				return;
 			}

@@ -1,6 +1,6 @@
 using Terraria.ID;
+using Terraria.GameContent.Creative;
 using Terraria.ModLoader;
-using static Terraria.ModLoader.ModContent;
 
 namespace ExampleMod.Content.Items.Placeable.Furniture
 {
@@ -8,20 +8,21 @@ namespace ExampleMod.Content.Items.Placeable.Furniture
 	{
 		public override void SetStaticDefaults() {
 			Tooltip.SetDefault("This is a modded clock.");
+			CreativeItemSacrificesCatalog.Instance.SacrificeCountNeededByItemId[Type] = 1;
 		}
 
 		public override void SetDefaults() {
-			item.width = 26;
-			item.height = 22;
-			item.maxStack = 99;
-			item.useTurn = true;
-			item.autoReuse = true;
-			item.useAnimation = 15;
-			item.useTime = 10;
-			item.useStyle = ItemUseStyleID.Swing;
-			item.consumable = true;
-			item.value = 500;
-			item.createTile = TileType<Tiles.Furniture.ExampleClock>();
+			Item.width = 26;
+			Item.height = 22;
+			Item.maxStack = 99;
+			Item.useTurn = true;
+			Item.autoReuse = true;
+			Item.useAnimation = 15;
+			Item.useTime = 10;
+			Item.useStyle = ItemUseStyleID.Swing;
+			Item.consumable = true;
+			Item.value = 500;
+			Item.createTile = ModContent.TileType<Tiles.Furniture.ExampleClock>();
 		}
 
 		// Please see Content/ExampleRecipes.cs for a detailed explanation of recipe creation.

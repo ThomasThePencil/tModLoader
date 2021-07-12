@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using Terraria.Graphics.Shaders;
+using Terraria.ID;
 using Terraria.ModLoader.Default;
 using Terraria.ModLoader.Engine;
 using Terraria.ModLoader.Exceptions;
@@ -14,7 +15,7 @@ namespace Terraria.ModLoader.IO
 {
 	internal static class PlayerIO
 	{
-		internal static void WriteVanillaHairDye(short hairDye, BinaryWriter writer) {
+		internal static void WriteByteVanillaHairDye(int hairDye, BinaryWriter writer) {
 			writer.Write((byte)(hairDye > EffectsTracker.vanillaHairShaderCount ? 0 : hairDye));
 		}
 
@@ -34,9 +35,12 @@ namespace Terraria.ModLoader.IO
 				["bank"] = SaveInventory(player.bank.item),
 				["bank2"] = SaveInventory(player.bank2.item),
 				["bank3"] = SaveInventory(player.bank3.item),
+				["bank4"] = SaveInventory(player.bank4.item),
 				["hairDye"] = SaveHairDye(player.hairDye),
+				["research"] = SaveResearch(player),
 				["modData"] = SaveModData(player),
 				["modBuffs"] = SaveModBuffs(player),
+				["infoDisplays"] = SaveInfoDisplays(player),
 				["usedMods"] = SaveUsedMods(player)
 			};
 
@@ -69,9 +73,12 @@ namespace Terraria.ModLoader.IO
 			LoadInventory(player.bank.item, tag.GetList<TagCompound>("bank"));
 			LoadInventory(player.bank2.item, tag.GetList<TagCompound>("bank2"));
 			LoadInventory(player.bank3.item, tag.GetList<TagCompound>("bank3"));
+			LoadInventory(player.bank4.item, tag.GetList<TagCompound>("bank4"));
 			LoadHairDye(player, tag.GetString("hairDye"));
+			LoadResearch(player, tag.GetList<TagCompound>("research"));
 			LoadModData(player, tag.GetList<TagCompound>("modData"));
 			LoadModBuffs(player, tag.GetList<TagCompound>("modBuffs"));
+			LoadInfoDisplays(player, tag.GetList<string>("infoDisplays"));
 			LoadUsedMods(player, tag.GetList<string>("usedMods"));
 		}
 
@@ -92,13 +99,43 @@ namespace Terraria.ModLoader.IO
 				inv[tag.GetShort("slot")] = ItemIO.Load(tag);
 		}
 
-		public static string SaveHairDye(short hairDye) {
+		public static List<TagCompound> SaveResearch(Player player) {
+			var list = new List<TagCompound>();
+			Dictionary<string, int> dictionary = new Dictionary<string, int>(player.creativeTracker.ItemSacrifices._sacrificeCountByItemPersistentId);
+			foreach (KeyValuePair<string, int> item in dictionary) {
+				ContentSamples.ItemNetIdsByPersistentIds.TryGetValue(item.Key, out int netID);
+				ContentSamples.ItemsByType.TryGetValue(netID, out Item realItem);
+				if (ItemLoader.NeedsModSaving(realItem)) {
+					TagCompound tag = new TagCompound {
+						["sacrificeCount"] = item.Value,
+						["persistentID"] = item.Key
+					};
+					list.Add(tag);
+				}
+			}
+			return list.Count > 0 ? list : null;
+		}
+
+		public static void LoadResearch(Player player, IList<TagCompound> list) {
+			foreach (var tag in list) {
+				ContentSamples.ItemNetIdsByPersistentIds.TryGetValue(tag.GetString("persistentID"), out int netID);
+				ContentSamples.ItemsByType.TryGetValue(netID, out Item realItem);
+				if (ItemLoader.NeedsModSaving(realItem)) {
+					player.creativeTracker.ItemSacrifices._sacrificeCountByItemPersistentId[tag.GetString("persistentID")] = tag.GetInt("sacrificeCount");
+					if (ContentSamples.ItemNetIdsByPersistentIds.TryGetValue(tag.GetString("persistentID"), out int value2))
+						player.creativeTracker.ItemSacrifices.SacrificesCountByItemIdCache[value2] = tag.GetInt("sacrificeCount");
+				}
+			}
+		}
+
+		public static string SaveHairDye(int hairDye) {
 			if (hairDye <= EffectsTracker.vanillaHairShaderCount)
 				return "";
 
 			int itemId = GameShaders.Hair._reverseShaderLookupDictionary[hairDye];
 			var modItem = ItemLoader.GetItem(itemId);
-			return modItem.Mod.Name + '/' + modItem.Name;
+
+			return modItem.FullName;
 		}
 
 		public static void LoadHairDye(Player player, string hairDyeItemName) {
@@ -210,6 +247,26 @@ namespace Terraria.ModLoader.IO
 				Array.Copy(player.buffTime, index, player.buffTime, index + 1, Player.MaxBuffs - index - 1);
 				player.buffType[index] = buff.Type;
 				player.buffTime[index] = tag.GetInt("time");
+			}
+		}
+
+		internal static List<string> SaveInfoDisplays(Player player) {
+			var hidden = new List<string>();
+			for (int i = 0; i < InfoDisplayLoader.InfoDisplays.Count; i++) {
+				if(!(InfoDisplayLoader.InfoDisplays[i] is VanillaInfoDisplay)) {
+					if (player.hideInfo[i])
+						hidden.Add(InfoDisplayLoader.InfoDisplays[i].FullName);
+				}
+			}
+			return hidden;
+		}
+
+		internal static void LoadInfoDisplays(Player player, IList<string> hidden) {
+			for (int i = 0; i < InfoDisplayLoader.InfoDisplays.Count; i++) {
+				if (!(InfoDisplayLoader.InfoDisplays[i] is VanillaInfoDisplay)) {
+					if (hidden.Contains(InfoDisplayLoader.InfoDisplays[i].FullName))
+						player.hideInfo[i] = true;
+				}
 			}
 		}
 
