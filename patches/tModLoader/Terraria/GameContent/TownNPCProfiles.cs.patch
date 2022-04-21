@@ -30,7 +30,7 @@
  			{ 229, new Profiles.LegacyNPCProfile("Images/TownNPCs/Pirate", 19) },
  			{ 142, new Profiles.LegacyNPCProfile("Images/TownNPCs/Santa", 11) },
  			{ 453, new Profiles.LegacyNPCProfile("Images/TownNPCs/SkeletonMerchant", -1) },
-@@ -48,13 +_,20 @@
+@@ -48,13 +_,26 @@
  			{ 353, new Profiles.LegacyNPCProfile("Images/TownNPCs/Stylist", 20) },
  			{ 441, new Profiles.LegacyNPCProfile("Images/TownNPCs/TaxCollector", 23) },
  			{ 368, new Profiles.LegacyNPCProfile("Images/TownNPCs/TravelingMerchant", 21) },
@@ -45,10 +45,16 @@
  		public static TownNPCProfiles Instance = new TownNPCProfiles();
  
 -		public bool GetProfile(int npcId, out ITownNPCProfile profile) => _townNPCProfiles.TryGetValue(npcId, out profile);
++		public bool GetProfile(NPC npc, out ITownNPCProfile profile) => _townNPCProfiles.TryGetValue(npc.type, out profile);
++		/*
++		disablin' this alternative approach until I figure out how to properly decouple vanilla profiles from modded + modified vanilla profiles
++		-thomas
++
 +		public bool GetProfile(NPC npc, out ITownNPCProfile profile) {
-+			Dictionary<int, ITownNPCProfile> townNPCProfileList = _townNPCProfiles;
++			Dictionary<int, ITownNPCProfile> townNPCProfileList = new(_townNPCProfiles);
 +			NPCLoader.SetTownNPCProfile(npc, townNPCProfileList);
 +			return townNPCProfileList.TryGetValue(npc.type, out profile);
 +		}
++		*/
  	}
  }
