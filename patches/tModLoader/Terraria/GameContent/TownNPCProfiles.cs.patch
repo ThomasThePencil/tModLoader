@@ -49,6 +49,6 @@
 +			Dictionary<int, ITownNPCProfile> townNPCProfileList = _townNPCProfiles;
 +			NPCLoader.SetTownNPCProfile(npc, townNPCProfileList);
 +			return townNPCProfileList.TryGetValue(npc.type, out profile);
-+		}		
++		}
  	}
  }
