@@ -110,11 +110,5 @@ namespace Terraria.ModLoader
 		}
 
 		public sealed override void SetupContent() => SetStaticDefaults();
-
-		public bool CountsAsClass<T>() where T : DamageClass
-			=> CountsAsClass(ModContent.GetInstance<T>());
-
-		public bool CountsAsClass(DamageClass damageClass)
-			=> DamageClassLoader.effectInheritanceCache[Type, damageClass.Type];
 	}
 }
