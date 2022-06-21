@@ -515,7 +515,7 @@
  						Tile tileSafely5 = Framing.GetTileSafely(num18, num19 - 2);
  						bool flag18 = height / 16 < 3;
 -						if (townNPC && tileSafely5.nactive() && (tileSafely5.type == 10 || tileSafely5.type == 388) && (Main.rand.Next(10) == 0 || flag)) {
-+						if (townNPC && tileSafely5.nactive() && (TileLoader.OpenDoorID(tileSafely5) >= 0 || tileSafely5.type == 388) && (Main.rand.Next(10) == 0 || flag)) {
++						if ((townNPC || NPCID.Sets.AllowDoorInteraction[type]) && tileSafely5.nactive() && (TileLoader.OpenDoorID(tileSafely5) >= 0 || tileSafely5.type == 388) && (Main.rand.Next(10) == 0 || flag)) {
  							if (Main.netMode != 1) {
  								if (WorldGen.OpenDoor(num18, num19 - 2, base.direction)) {
  									closeDoor = true;
@@ -788,6 +788,15 @@
  			if (townNPC) {
  				AddIntoPlayersTownNPCSlots();
  				return;
+@@ -55790,7 +_,7 @@
+ 			if (timeLeft <= 0)
+ 				flag = false;
+ 
+-			if (!flag && Main.netMode != 1) {
++			if (!flag && Main.netMode != 1 && !NPCLoader.SavesAndLoads(this)) {
+ 				noSpawnCycle = true;
+ 				active = false;
+ 				if (Main.netMode == 2) {
 @@ -55886,6 +_,9 @@
  				return;
  			}

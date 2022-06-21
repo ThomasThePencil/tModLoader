@@ -94,7 +94,7 @@
  				for (int j = 0; j < 200; j++) {
  					perIDStaticNPCImmunity[i][j] = 0u;
  				}
-@@ -221,7 +_,37 @@
+@@ -221,7 +_,38 @@
  			}
  		}
  
@@ -128,6 +128,7 @@
 +			DamageType = DamageClass.Default;
 +			ArmorPenetration = 0;
 +			CritChance = 0;
++			WhipSettings = default;
 +			nameOverride = null;
  			ownerHitCheckDistance = 1000f;
  			counterweight = false;
@@ -259,6 +260,14 @@
  			penetrate = -1;
  			tileCollide = false;
  			scale = 1f;
+@@ -8109,6 +_,7 @@
+ 			extraUpdates = 1;
+ 			usesLocalNPCImmunity = true;
+ 			localNPCHitCooldown = -1;
++			VanillaWhipSettings(this, out WhipSettings.Segments, out WhipSettings.RangeMultiplier);
+ 		}
+ 
+ 		public static int GetNextSlot() {
 @@ -8123,6 +_,10 @@
  			return result;
  		}
@@ -324,7 +333,19 @@
  
  			if (Owner == Main.myPlayer) {
  				if (ProjectileID.Sets.IsAGolfBall[Type] && Damage <= 0) {
-@@ -8330,6 +_,11 @@
+@@ -8325,11 +_,23 @@
+ 
+ 				if (Type == 777 || Type == 781 || Type == 794 || Type == 797 || Type == 800 || Type == 785 || Type == 788 || Type == 791 || Type == 903 || Type == 904 || Type == 905 || Type == 906 || Type == 910 || Type == 911)
+ 					projectile.timeLeft = 180;
++
++				// Copied from 1.3, adjusted to check for actual player (servers never shoot thrower projectiles)
++				if (Main.netMode != NetmodeID.Server) {
++					Player throwingPlayer = Main.player[Owner];
++					if (throwingPlayer.AnyThrownCostReduction && throwingPlayer.HeldItem.CountsAsClass(DamageClass.Throwing))
++						projectile.noDropItem = true;
++				}
+ 			}
+ 
  			if (Type == 249)
  				projectile.frame = Main.rand.Next(5);
  
@@ -702,12 +723,15 @@
  			if (myRect.Intersects(targetRect))
  				return true;
  
-@@ -11397,7 +_,7 @@
+@@ -11395,9 +_,9 @@
+ 				if (!noEnchantmentVisuals)
+ 					UpdateEnchantmentVisuals();
  
- 				if (numUpdates == -1 && (minion || sentry)) {
+-				if (numUpdates == -1 && (minion || sentry)) {
++				if ((minion || sentry || ContinuouslyUpdateDamage)) {
  					Player player = Main.player[owner];
 -					damage = (int)((float)originalDamage * player.minionDamage + (float)player.minionAddDamage + 5E-06f);
-+					damage = (int)player.GetTotalDamage(DamageClass.Summon).ApplyTo(originalDamage);
++					damage = (int)player.GetTotalDamage(DamageType).ApplyTo(originalDamage);
  				}
  
  				if (minion && numUpdates == -1 && type != 625 && type != 628) {
@@ -962,6 +986,18 @@
  			if (ai[0] == (float)(int)(timeToFlyOut / 2f)) {
  				WhipPointsForCollision.Clear();
  				FillWhipControlPoints(this, WhipPointsForCollision);
+@@ -30632,6 +_,11 @@
+ 
+ 		public static void GetWhipSettings(Projectile proj, out float timeToFlyOut, out int segments, out float rangeMultiplier) {
+ 			timeToFlyOut = Main.player[proj.owner].itemAnimationMax * proj.MaxUpdates;
++			segments = proj.WhipSettings.Segments;
++			rangeMultiplier = proj.WhipSettings.RangeMultiplier;
++		}
++
++		private static void VanillaWhipSettings(Projectile proj, out int segments, out float rangeMultiplier) {
+ 			segments = 20;
+ 			rangeMultiplier = 1f;
+ 			switch (proj.type) {
 @@ -33091,6 +_,9 @@
  					if (num3 > (float)num9)
  						ai[0] = 1f;
