@@ -12,20 +12,22 @@ namespace Terraria.ModLoader
 	/// <summary>
 	/// A ModPlayer instance represents an extension of a Player instance. You can store fields in the ModPlayer classes, much like how the Player class abuses field usage, to keep track of mod-specific information on the player that a ModPlayer instance represents. It also contains hooks to insert your code into the Player class.
 	/// </summary>
-	public abstract class ModPlayer : ModType<Player, ModPlayer>
+	public abstract class ModPlayer : ModType<Player, ModPlayer>, IIndexed
 	{
+		public ushort Index { get; internal set; }
+
 		/// <summary>
 		/// The Player instance that this ModPlayer instance is attached to.
 		/// </summary>
 		public Player Player => Entity;
 
-		internal ushort index;
-
 		protected override Player CreateTemplateEntity() => null;
 
 		public override ModPlayer NewInstance(Player entity) {
 			var inst = base.NewInstance(entity);
-			inst.index = index;
+			
+			inst.Index = Index;
+
 			return inst;
 		}
 
@@ -714,7 +716,16 @@ namespace Terraria.ModLoader
 		}
 
 		/// <summary>
-		/// Allows you to change the item or enemy the player gets when sucessfully catching a "fish". The Fishing Attempt structure contains most information about the vanilla event, including the Item Rod and Bait used by the player, the liquid it is being fished on, and so on.
+		/// Allows you to change information about the ongoing fishing attempt before cought items/NPCs are decided, after all vanilla information has been gathered.
+		/// <br/>Will not be called if various conditions for getting a catch aren't met, meaning you can't modify those.
+		/// <br/>Setting <see cref="FishingAttempt.rolledItemDrop"/> or <see cref="FishingAttempt.rolledEnemySpawn"/> is not allowed and will be reset, use <see cref="CatchFish"/> for that.
+		/// </summary>
+		/// <param name="attempt">The structure containing most data from the vanilla fishing attempt</param>
+		public virtual void ModifyFishingAttempt(ref FishingAttempt attempt) {
+		}
+
+		/// <summary>
+		/// Allows you to change the item or enemy the player gets when sucessfully catching an item or NPC. The Fishing Attempt structure contains most information about the vanilla event, including the Item Rod and Bait used by the player, the liquid it is being fished on, and so on.
 		/// The Sonar and Sonar position fields allow you to change the text, color, velocity and position of the catch's name (be it item or NPC) freely
 		/// </summary>
 		/// <param name="attempt">The structure containing most data from the vanilla fishing attempt</param>
