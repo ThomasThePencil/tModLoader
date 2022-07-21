@@ -253,9 +253,10 @@ namespace Terraria.ModLoader
 		/// <param name="playSound"></param>
 		/// <param name="genGore"></param>
 		/// <param name="damageSource"></param>
+		/// <param name="cooldownCounter"></param>
 		/// <returns></returns>
 		public virtual bool PreHurt(bool pvp, bool quiet, ref int damage, ref int hitDirection, ref bool crit,
-			ref bool customDamage, ref bool playSound, ref bool genGore, ref PlayerDeathReason damageSource) {
+			ref bool customDamage, ref bool playSound, ref bool genGore, ref PlayerDeathReason damageSource, ref int cooldownCounter) {
 			return true;
 		}
 
@@ -267,7 +268,8 @@ namespace Terraria.ModLoader
 		/// <param name="damage"></param>
 		/// <param name="hitDirection"></param>
 		/// <param name="crit"></param>
-		public virtual void Hurt(bool pvp, bool quiet, double damage, int hitDirection, bool crit) {
+		/// <param name="cooldownCounter"></param>
+		public virtual void Hurt(bool pvp, bool quiet, double damage, int hitDirection, bool crit, int cooldownCounter) {
 		}
 
 		/// <summary>
@@ -278,7 +280,8 @@ namespace Terraria.ModLoader
 		/// <param name="damage"></param>
 		/// <param name="hitDirection"></param>
 		/// <param name="crit"></param>
-		public virtual void PostHurt(bool pvp, bool quiet, double damage, int hitDirection, bool crit) {
+		/// <param name="cooldownCounter"></param>
+		public virtual void PostHurt(bool pvp, bool quiet, double damage, int hitDirection, bool crit, int cooldownCounter) {
 		}
 
 		/// <summary>
@@ -860,6 +863,18 @@ namespace Terraria.ModLoader
 		/// <param name="slot">The index in the inventory of the clicked slot.</param>
 		/// <returns>Whether or not to block the default code (sell, trash, move, etc) from running. Returns false by default.</returns>
 		public virtual bool ShiftClickSlot(Item[] inventory, int context, int slot) {
+			return false;
+		}
+
+		/// <summary>
+		/// Called whenever the player hovers over an item slot. This can be used to override <see cref="Main.cursorOverride"/>
+		/// <br>See <see cref="ID.CursorOverrideID"/> for cursor override style IDs</br>
+		/// </summary>
+		/// <param name="inventory">The array of items the slot is part of.</param>
+		/// <param name="context">The Terraria.UI.ItemSlot.Context of the inventory.</param>
+		/// <param name="slot">The index in the inventory of the hover slot.</param>
+		/// <returns>Whether or not to block the default code that modifies <see cref="Main.cursorOverride"/> from running. Returns false by default.</returns>
+		public virtual bool HoverSlot(Item[] inventory, int context, int slot) {
 			return false;
 		}
 

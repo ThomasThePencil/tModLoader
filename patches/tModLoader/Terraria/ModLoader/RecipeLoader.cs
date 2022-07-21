@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Collections.Generic;
+using System.Reflection;
 using Terraria.ID;
 using Terraria.ModLoader.Exceptions;
 using Terraria.ModLoader.Core;
@@ -13,6 +14,10 @@ namespace Terraria.ModLoader
 	public static class RecipeLoader
 	{
 		internal static Recipe[] FirstRecipeForItem = new Recipe[ItemID.Count];
+		/// <summary>
+		/// Cloned list of Items consumed when crafting.  Cleared after the OnCreate and OnCraft hooks.
+		/// </summary>
+		internal static List<Item> ConsumedItems = new List<Item>();
 
 		/// <summary>
 		/// Set when tML sets up modded recipes. Used to detect misuse of CreateRecipe
@@ -30,10 +35,11 @@ namespace Terraria.ModLoader
 		}
 
 		internal static void AddRecipes() {
+			var addRecipesMethod = typeof(Mod).GetMethod(nameof(Mod.AddRecipes), BindingFlags.Instance | BindingFlags.Public)!;
 			foreach (Mod mod in ModLoader.Mods) {
 				CurrentMod = mod;
 				try {
-					mod.AddRecipes();
+					addRecipesMethod.Invoke(mod, Array.Empty<object>());
 					SystemLoader.AddRecipes(mod);
 					LoaderUtils.ForEachAndAggregateExceptions(mod.GetContent<ModItem>(), item => item.AddRecipes());
 					LoaderUtils.ForEachAndAggregateExceptions(mod.GetContent<GlobalItem>(), global => global.AddRecipes());
@@ -49,10 +55,11 @@ namespace Terraria.ModLoader
 		}
 
 		internal static void PostAddRecipes() {
+			var postAddRecipesMethod = typeof(Mod).GetMethod(nameof(Mod.PostAddRecipes), BindingFlags.Instance | BindingFlags.Public)!;
 			foreach (Mod mod in ModLoader.Mods) {
 				CurrentMod = mod;
 				try {
-					mod.PostAddRecipes();
+					postAddRecipesMethod.Invoke(mod, Array.Empty<object>());
 					SystemLoader.PostAddRecipes(mod);
 				}
 				catch (Exception e) {
@@ -146,12 +153,22 @@ namespace Terraria.ModLoader
 		}
 
 		/// <summary>
-		/// Allows you to make anything happen when a player uses this recipe.
+		/// recipe.OnCraftHooks followed by Calls ItemLoader.OnCreate with a RecipeCreationContext
 		/// </summary>
 		/// <param name="item">The item crafted.</param>
 		/// <param name="recipe">The recipe used to craft the item.</param>
+		/// <param name="consumedItems">Materials used to craft the item.</param>
+		public static void OnCraft(Item item, Recipe recipe, List<Item> consumedItems) {
+			recipe.OnCraftHooks?.Invoke(recipe, item, consumedItems);
+			ItemLoader.OnCreate(item, new RecipeCreationContext { recipe = recipe, ConsumedItems = consumedItems });
+		}
+
+		/// <summary>
+		/// Helper version of OnCraft, used in combination with Recipe.Create and the internal ConsumedItems list
+		/// </summary>
 		public static void OnCraft(Item item, Recipe recipe) {
-			recipe.OnCraftHooks?.Invoke(recipe, item);
+			OnCraft(item, recipe, ConsumedItems);
+			ConsumedItems.Clear();
 		}
 
 		/// <summary>

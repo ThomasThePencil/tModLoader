@@ -4,6 +4,7 @@ using static tModPorter.Rewriters.MemberUseRewriter;
 using static tModPorter.Rewriters.HookRewriter;
 using static tModPorter.Rewriters.AddComment;
 using System;
+using System.IO;
 
 namespace tModPorter;
 
@@ -143,6 +144,9 @@ public static partial class Config
 		ChangeHookSignature("Terraria.ModLoader.GlobalProjectile",	"CanDamage", comment: "Suggestion: Return null instead of true");
 		ChangeHookSignature("Terraria.ModLoader.ModProjectile",		"TileCollideStyle");
 		ChangeHookSignature("Terraria.ModLoader.GlobalProjectile",	"TileCollideStyle");
+		ChangeHookSignature("Terraria.ModLoader.ModPlayer",			"PreHurt");
+		ChangeHookSignature("Terraria.ModLoader.ModPlayer",			"Hurt");
+		ChangeHookSignature("Terraria.ModLoader.ModPlayer",			"PostHurt");
 		ChangeHookSignature("Terraria.ModLoader.ModPlayer",			"CatchFish");
 		ChangeHookSignature("Terraria.ModLoader.ModPlayer",			"AddStartingItems", comment: "Suggestion: Return an Item array to add to the players starting items. Use ModifyStartingInventory for modifying them if needed");
 		ChangeHookSignature("Terraria.ModLoader.ModTile",			"SetDrawPositions");
@@ -206,6 +210,9 @@ public static partial class Config
 		HookRemoved("Terraria.ModLoader.Mod", "PostDrawFullscreenMap",		"Use ModSystem.PostDrawFullscreenMap or a ModMapLayer");
 		HookRemoved("Terraria.ModLoader.Mod", "PostUpdateInput",			"Use ModSystem.PostUpdateInput");
 		HookRemoved("Terraria.ModLoader.Mod", "PreSaveAndQuit",				"Use ModSystem.PreSaveAndQuit");
+		HookRemoved("Terraria.ModLoader.Mod", "AddRecipeGroups",			"Use ModSystem.AddRecipeGroups");
+		HookRemoved("Terraria.ModLoader.Mod", "AddRecipes",					"Use ModSystem.AddRecipes");
+		HookRemoved("Terraria.ModLoader.Mod", "PostAddRecipes",				"Use ModSystem.PostAddRecipes");
 
 		RenameMethod("Terraria.ModLoader.ModItem",		from: "Load",		to: "LoadData");
 		RenameMethod("Terraria.ModLoader.ModItem",		from: "Save",		to: "SaveData");
@@ -301,6 +308,8 @@ public static partial class Config
 		RefactorInstanceMethodCall("Terraria.ModLoader.Mod", "AddEquipTexture",		ConvertAddEquipTexture);
 		RefactorInstanceMethodCall("Terraria.ModLoader.Mod", "CreateRecipe",		ToStaticMethodCall("Terraria.Recipe",								"Create",				targetBecomesFirstArg: false));
 
+		RenameMethod("System.IO.BinaryReader",			from: "ReadVarInt",		to: "Read7BitEncodedInt");
+		RenameMethod("System.IO.BinaryWriter",			from: "WriteVarInt",	to: "Write7BitEncodedInt");
 		RenameMethod("Terraria.ModLoader.Mod",			from: "TextureExists",	to: "HasAsset");
 		RenameMethod("Terraria.ModLoader.ModContent",	from: "TextureExists",	to: "HasAsset");
 
