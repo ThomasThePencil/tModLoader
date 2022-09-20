@@ -11,10 +11,13 @@
  
  namespace Terraria
  {
-@@ -83,10 +_,14 @@
+@@ -83,10 +_,17 @@
  			int num = 0;
  			num = start + 1;
  			b = (byte)(messageType = readBuffer[start]);
++			if (ModNet.DetailedLogging)
++				ModNet.Debug(whoAmI, $"GetData {MessageID.GetName(b)}({b}), {length+2}");
++
 +			/*
  			if (b >= 143)
  				return;
@@ -75,7 +78,7 @@
  					if (Main.netMode == 1) {
  						Netplay.Disconnect = true;
  						Main.statusText = NetworkText.Deserialize(reader).ToString();
-+						Main.menuMode = 14; // Added by TML.
++						Main.menuMode = MenuID.MultiplayerJoining; // Added by TML.
  					}
  					break;
  				case 3:
@@ -661,7 +664,7 @@
 +							item.stack = reader.Read7BitEncodedInt();
 +						}
 +
-+						TEWeaponsRack.TryPlacing(x5, y5, item, item.stack);
++						TEFoodPlatter.TryPlacing(x5, y5, item, item.stack);
  					}
  					break;
  				case 134: {
